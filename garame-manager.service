@@ -1,0 +1,51 @@
+[Unit]
+Description=GARAMe MANAGER - Sensor Monitoring System with Watchdog
+After=network.target display-manager.service graphical.target
+Wants=network-online.target graphical.target
+Requires=network-online.target
+
+[Service]
+Type=simple
+# 사용자 계정으로 실행 (예: ubuntu, 또는 실제 사용자명)
+User=%i
+Group=%i
+
+# 작업 디렉토리 (설치 스크립트가 자동으로 수정)
+WorkingDirectory=/home/%i/Desktop/프로그램/manager/1.9.7
+
+# 환경 변수 설정
+Environment="DISPLAY=:0"
+Environment="HOME=/home/%i"
+Environment="PATH=/home/%i/venvs/garame/bin:/usr/local/bin:/usr/bin:/bin"
+# XAUTHORITY는 start_manager_service.sh에서 동적으로 설정
+
+# Python 가상환경 활성화 및 실행
+ExecStartPre=/bin/sleep 5
+ExecStart=/bin/bash /home/%i/Desktop/프로그램/manager/1.9.7/start_manager_service.sh
+
+# 재시작 정책 (정상 종료 시에는 재시작하지 않음)
+Restart=on-failure
+RestartSec=10
+StartLimitInterval=300
+StartLimitBurst=5
+
+# 종료 시그널 처리
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# 표준 출력/오류 로그
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=garame-manager
+
+# 보안 설정
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/%i/Desktop/프로그램/manager/1.9.7
+
+[Install]
+WantedBy=graphical.target multi-user.target
+

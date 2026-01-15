@@ -1,0 +1,141 @@
+# ============================================
+# GARAMe MANAGER v2.0.0 설정 파일 예제
+# ============================================
+# 이 파일을 복사하여 config.conf로 사용하세요
+# copy config.conf.example config.conf
+
+[LISTEN]
+# 서버 리스닝 주소 및 포트
+host = 0.0.0.0
+port = 9000
+
+# v2.0 TLS/SSL 설정 (선택적)
+tls_enabled = false
+tls_cert = certs/server.crt
+tls_key = certs/server.key
+
+# v2.0 HMAC 서명 설정 (선택적)
+hmac_enabled = false
+hmac_secret = your_secret_key_here
+require_signature = false
+
+[UI]
+# 탭 ID 정책: by_ip (IP별), by_sid (센서 ID별)
+tab_id_policy = by_ip
+
+# 레이아웃: tabs (탭), grid (그리드)
+layout = tabs
+
+# 그리드 레이아웃 사용 시 열 개수
+grid_cols = 3
+
+# 타일 크기 배율 (0.3 ~ 0.7)
+tile_scale = 0.5
+
+# 헤더 문구 크기 배율 (0.5 ~ 2.0)
+header_scale = 1.00
+
+# 현재상태 텍스트 크기 배율 (0.5 ~ 1.5)
+status_text_scale = 0.8
+
+# 연결 타임아웃 (초) - 센서 통신 간격의 5배 이상 권장 (예: 센서 1초 간격이면 20초 이상)
+# 네트워크 지연이나 센서 측 지연을 고려하여 여유 있게 설정
+# 불안정한 네트워크 환경에서는 25-30초로 증가 권장
+connection_timeout = 20.0
+
+# 설정 메뉴 비밀번호 해시 (SHA-256)
+# 생성 방법: python generate_settings_password.py
+# 비밀번호를 사용하지 않으려면 이 줄을 삭제하거나 주석 처리하세요
+# settings_password_hash = YOUR_PASSWORD_HASH_HERE
+
+# 5단계 경보 시스템 임계값은 standard_defaults.conf 파일에서 관리됩니다.
+# 사용자 커스터마이징이 필요한 경우 해당 파일을 직접 수정하세요.
+# 또는 프로그램의 "설정 > 5단계 경보 시스템 설정" 메뉴를 사용하세요.
+
+[ENV]
+# 환경 설정
+temp_min = 18.0
+temp_max = 26.0
+temp_caution = 28.0
+temp_warning = 30.0
+temp_danger = 32.0
+hum_min = 30.0
+hum_max = 70.0
+safety_education_photo = False
+
+# v2.0 센서 활성화 설정
+water_sensor_enabled = True
+ch4_sensor_enabled = True
+smoke_sensor_enabled = True
+ext_input_enabled = True
+ext_input_name = 외부접점
+
+[VALUE]
+# 표시 문구
+text = 가람이엔지입니다. 밀폐공간 사고 방지를 위해서 공기질 측정중입니다.(참고자료로만 이용해 주세요)
+
+[AUTH]
+# 인증 설정
+enabled = true
+users = sensor01:mypass, sensor02:mypass, sensor03:mypass, sensor04:mypass,
+
+[ADMIN]
+# 관리자 설정
+admin_password = YOUR_ADMIN_PASSWORD_HASH_HERE
+password_changed = False
+admin_mode = False
+
+[WATCHDOG]
+# 와치독 설정
+enabled = true
+check_interval = 30
+restart_delay = 5
+log_level = INFO
+max_log_size = 10485760
+backup_count = 5
+
+[CAMERA]
+# 카메라 설정
+device_id = 0
+resolution_width = 1920
+resolution_height = 1080
+fps = 30
+auto_focus = true
+# 거울보기 좌우 반전 (true: 반전, false: 반전 안 함)
+flip_horizontal = true
+
+[SAFETY]
+# 안전 교육 설정
+photo_enabled = true
+face_recognition = true
+signature_recognition = true
+
+[WEATHER]
+# 기상청 API 설정
+# 공공데이터포털(https://data.go.kr)에서 발급받은 서비스키
+kma_api_key = YOUR_API_KEY_HERE
+# 위치 설정 (위도/경도) - 강원특별자치도 춘천시 동면 기준
+location_lat = 37.9129
+location_lon = 127.7863
+# 갱신 주기 (초) - 기본 15분
+update_interval = 900
+# 외부 IP 기반 위치 자동 감지 사용 여부
+auto_detect_location = True
+
+# 년도별 폴더 생성
+yearly_folders = true
+
+# 이미지 압축 여부
+compress_images = true
+
+# 압축 품질 (1-100)
+compression_quality = 85
+
+# 최대 이미지 크기 (픽셀)
+max_image_size = 1920
+
+# 자동 저장 여부
+auto_save = true
+
+# 저장 경로 (상대 경로)
+save_path = safety_photos

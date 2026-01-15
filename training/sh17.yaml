@@ -1,0 +1,33 @@
+# SH17 Dataset Configuration for YOLOv11
+# PPE Detection - 17 Classes
+#
+# 먼저 prepare_sh17_dataset.py를 실행하여 데이터셋을 준비하세요!
+#   python prepare_sh17_dataset.py
+
+# 데이터셋 경로
+path: /home/garam/바탕화면/code/1.9.8.2/datasets/sh17
+train: images_split/train
+val: images_split/val
+
+# 클래스 정의 (17개)
+names:
+  0: person
+  1: head
+  2: face
+  3: glasses
+  4: face-mask
+  5: face-guard
+  6: ear
+  7: ear-mufs
+  8: hands
+  9: gloves
+  10: foot
+  11: shoes
+  12: safety-vest
+  13: tools
+  14: helmet
+  15: medical-suit
+  16: safety-suit
+
+# 클래스 수
+nc: 17
