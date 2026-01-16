@@ -167,7 +167,7 @@ detect_nvidia_gpu() {
 # 배너 출력
 print_banner() {
     echo "========================================="
-    echo "  GARAMe Manager v1.9.8.4"
+    echo "  GARAMe Manager v2.0.1"
     echo "  통합 설치 스크립트"
     echo "  Ubuntu 18.04+ (GPU 자동 감지 지원)"
     echo "========================================="
@@ -1153,7 +1153,7 @@ main() {
     check_ubuntu_version
 
     # 디스크 사용량 로그 초기화
-    echo "GARAMe Manager v1.9.8.4 설치 - 디스크 사용량 추적 로그" > "$DISK_USAGE_LOG"
+    echo "GARAMe Manager v2.0.1 설치 - 디스크 사용량 추적 로그" > "$DISK_USAGE_LOG"
     echo "시작 시간: $(date '+%Y-%m-%d %H:%M:%S')" >> "$DISK_USAGE_LOG"
     echo "" >> "$DISK_USAGE_LOG"
 

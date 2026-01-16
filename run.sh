@@ -37,7 +37,7 @@ log_error() {
 # 배너 출력
 print_banner() {
     echo "========================================="
-    echo "  GARAMe Manager v1.9.8.4"
+    echo "  GARAMe Manager v2.0.1"
     echo "  실행 스크립트"
     echo "========================================="
     echo ""

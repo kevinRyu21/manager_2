@@ -39,7 +39,7 @@ class PanelHeader(tk.Frame):
         # 날씨 정보
         self._weather_info = None
 
-        # === 좌측 영역: 로고 + 시계 + 음성 + 안전장구점검 ===
+        # === 좌측 영역: 로고 + 시계 + 음성 + 안전안전점검 ===
         left_frame = tk.Frame(self, bg="#E8F4FD")
         left_frame.place(x=5, rely=0.5, anchor="w")
 
@@ -62,10 +62,10 @@ class PanelHeader(tk.Frame):
                                          relief="flat", bd=0, padx=2, pady=0, cursor="hand2")
         self.voice_toggle_btn.pack(side="left", padx=(0, 5))
 
-        # 안전장구점검 버튼
+        # 안전안전점검 버튼
         self.mirror_mode = False
         self.mirror_camera_ready = False
-        self.mirror_btn = tk.Button(left_frame, text="장구점검", command=self._toggle_mirror_view,
+        self.mirror_btn = tk.Button(left_frame, text="안전점검", command=self._toggle_mirror_view,
                                    font=("Pretendard", 9, "bold"), bg="#9C27B0", fg="#FFFFFF",
                                    relief="raised", bd=1, width=7, cursor="hand2", state="disabled")
         self.mirror_btn.pack(side="left", padx=(0, 5))
@@ -405,23 +405,23 @@ class PanelHeader(tk.Frame):
             pass
 
     def _toggle_mirror_view(self):
-        """안전장구점검 토글"""
+        """안전안전점검 토글"""
         if self.mirror_mode:
             self.master_panel.hide_mirror_view()
             self.mirror_mode = False
-            self.mirror_btn.configure(text="장구점검", bg="#9C27B0")
+            self.mirror_btn.configure(text="안전점검", bg="#9C27B0")
         else:
             self.master_panel.show_mirror_view()
             self.mirror_mode = True
-            self.mirror_btn.configure(text="점검끄기", bg="#F44336")
+            self.mirror_btn.configure(text="점검종료", bg="#F44336")
 
     def set_mirror_camera_ready(self, ready):
         """카메라 준비 상태 설정"""
         self.mirror_camera_ready = ready
         if ready:
-            self.mirror_btn.configure(state="normal", text="장구점검")
+            self.mirror_btn.configure(state="normal", text="안전점검")
         else:
-            self.mirror_btn.configure(state="disabled", text="장구점검")
+            self.mirror_btn.configure(state="disabled", text="안전점검")
 
     def _capture_current_screen(self):
         """화면 캡쳐"""

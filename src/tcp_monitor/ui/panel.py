@@ -737,7 +737,7 @@ class SensorPanel(ttk.Frame):
         # 헤더 버튼 텍스트 동기화
         if hasattr(self, 'header') and hasattr(self.header, 'mirror_btn'):
             self.header.mirror_mode = True
-            self.header.mirror_btn.configure(text="점검끄기", bg="#F44336")
+            self.header.mirror_btn.configure(text="점검종료", bg="#F44336")
 
         # 최신 프레임 저장 변수 초기화
         self.mirror_last_frame = None
@@ -883,9 +883,9 @@ class SensorPanel(ttk.Frame):
         if hasattr(self, 'header') and hasattr(self.header, 'mirror_btn'):
             self.header.mirror_mode = False
             if self.header.mirror_camera_ready:
-                self.header.mirror_btn.configure(text="장구점검", bg="#9C27B0")
+                self.header.mirror_btn.configure(text="안전점검", bg="#9C27B0")
             else:
-                self.header.mirror_btn.configure(text="장구점검", bg="#9C27B0", state="disabled")
+                self.header.mirror_btn.configure(text="안전점검", bg="#9C27B0", state="disabled")
 
         # 카메라 중지
         self._stop_mirror_camera()
@@ -3081,6 +3081,92 @@ class SensorPanel(ttk.Frame):
                 self.mirror_camera = None
         except Exception as e:
             print(f"거울보기 카메라 중지 오류: {e}")
+
+    def capture_current_screen(self):
+        """현재 화면 캡쳐 (GNOME/Wayland 호환 - flameshot 사용)"""
+        try:
+            import os
+            import subprocess
+            from datetime import datetime
+
+            # 캡쳐 저장 디렉토리
+            capture_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "captures")
+            if not os.path.exists(capture_dir):
+                os.makedirs(capture_dir)
+
+            # 파일명 생성 (날짜-시간)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"capture_{timestamp}.png"
+            filepath = os.path.join(capture_dir, filename)
+
+            print(f"[캡쳐] 저장 경로: {capture_dir}")
+            print(f"[캡쳐] 파일명: {filename}")
+
+            captured = False
+
+            # flameshot full --raw (Wayland/GNOME에서 가장 안정적)
+            try:
+                with open(filepath, 'wb') as f:
+                    result = subprocess.run(
+                        ['flameshot', 'full', '--raw'],
+                        stdout=f, stderr=subprocess.PIPE, timeout=5
+                    )
+                if result.returncode == 0 and os.path.exists(filepath) and os.path.getsize(filepath) > 10000:
+                    captured = True
+                    print(f"[캡쳐] flameshot 성공: {filepath}")
+                else:
+                    # 실패 시 파일 삭제
+                    try:
+                        os.unlink(filepath)
+                    except:
+                        pass
+            except FileNotFoundError:
+                print("[캡쳐] flameshot 없음 - sudo apt install flameshot")
+            except Exception as e:
+                print(f"[캡쳐] flameshot 오류: {e}")
+
+            if captured:
+                self._show_capture_notification(filepath)
+            else:
+                self._show_capture_error()
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            print(f"[캡쳐] 오류: {e}")
+
+    def _show_capture_error(self):
+        """캡쳐 실패 알림"""
+        try:
+            import tkinter as tk
+            from tkinter import messagebox
+
+            messagebox.showwarning(
+                "화면 캡쳐 실패",
+                "화면 캡쳐 도구를 찾을 수 없습니다.\n\n"
+                "GNOME/Wayland에서 캡쳐하려면:\n"
+                "sudo apt install flameshot",
+                parent=self
+            )
+        except Exception:
+            pass
+
+    def _show_capture_notification(self, filepath):
+        """캡쳐 완료 알림"""
+        try:
+            import tkinter as tk
+            import os
+
+            # 알림 레이블 생성
+            notify = tk.Label(self, text=f"✅ 캡쳐 저장: {os.path.basename(filepath)}",
+                             font=("Pretendard", 12, "bold"),
+                             bg="#27AE60", fg="#FFFFFF", padx=10, pady=5)
+            notify.place(relx=0.5, rely=0.9, anchor="center")
+
+            # 3초 후 알림 제거
+            self.after(3000, notify.destroy)
+        except Exception:
+            pass
 
     def _get_available_cameras(self):
         """사용 가능한 카메라 목록 검색 (Linux 전용)"""
