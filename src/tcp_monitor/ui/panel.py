@@ -696,6 +696,10 @@ class SensorPanel(ttk.Frame):
         # 타일 컨테이너 숨기기
         self.tiles_container.pack_forget()
 
+        # 화재 패널 숨기기 (거울보기 중에는 표시 안 함)
+        if hasattr(self, 'fire_alert_panel') and self.fire_alert_panel:
+            self.fire_alert_panel.pack_forget()
+
         # 인식률 프레임 생성
         if self.mirror_stats_frame is None:
             self.mirror_stats_frame = tk.Frame(self, bg="#2C3E50", height=40)
@@ -868,9 +872,13 @@ class SensorPanel(ttk.Frame):
         if hasattr(self, 'mirror_content_frame') and self.mirror_content_frame:
             self.mirror_content_frame.pack_forget()
 
+        # 화재 패널 다시 표시 (거울보기 해제 시)
+        if hasattr(self, 'fire_alert_panel') and self.fire_alert_panel:
+            self.fire_alert_panel.pack(side="left", fill="y", padx=(0, 10), before=self.tiles_container)
+
         # 타일 컨테이너 다시 표시
         self.tiles_container.pack(side="top", fill="both", expand=True, padx=12, pady=12)
-    
+
     def _start_mirror_camera(self):
         """거울보기용 카메라 시작 (빠른 초기화)"""
         try:

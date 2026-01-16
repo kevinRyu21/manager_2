@@ -101,9 +101,10 @@ class PanelHeader(tk.Frame):
         # 하위 호환성을 위한 별칭
         self.admin_mode_btn = self.mode_toggle_btn
 
-        # 중앙: 체감온도/불쾌지수 박스 (항상 고정 위치)
+        # 중앙: 체감온도/불쾌지수 박스 (고정 위치 - 화면 중앙)
         self.center_box = tk.Frame(self, bg="#D1E7DD", relief="raised", bd=2)
-        self.center_box.pack(side="left", padx=10, pady=6)
+        # place로 중앙에 고정 배치 (relx=0.5로 중앙, anchor로 정중앙 기준)
+        self.center_box.place(relx=0.5, rely=0.5, anchor="center")
 
         # 체감온도/불쾌지수 라벨 (중앙 박스 내부) - 반응형 크기
         self.hi_label = tk.Label(self.center_box, text="체감온도 HI: -- °C",
