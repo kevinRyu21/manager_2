@@ -799,53 +799,17 @@ download_ai_models() {
 create_config_files() {
     log_info "설정 파일 확인 중..."
 
-    # config.ini가 없으면 샘플 생성
-    if [ ! -f "config.ini" ]; then
-        log_info "기본 설정 파일 생성 중..."
-        cat > config.ini << 'EOF'
-[server]
-host = 0.0.0.0
-port = 5000
-
-[ui]
-fullscreen = true
-tile_scale = 0.55
-header_scale = 2.0
-
-[camera]
-default_device = 0
-flip_horizontal = true
-
-[face_recognition]
-# InsightFace 설정 (buffalo_l 고정밀 모델)
-tolerance = 0.5
-model = insightface
-insightface_model = buffalo_l
-det_size = 640
-det_thresh = 0.35
-
-[ppe_detection]
-# YOLO PPE 감지 설정
-enabled = true
-model = yolo11m
-inference_size = 640
-confidence = 0.25
-# 감지 대상: helmet, vest, mask, glasses, gloves, boots
-detect_helmet = true
-detect_vest = true
-detect_mask = false
-detect_glasses = false
-detect_gloves = false
-detect_boots = false
-
-[paths]
-data_dir = data
-logs_dir = logs
-faces_dir = data/faces
-EOF
-        log_success "기본 설정 파일 생성 완료"
+    # config.conf가 없으면 기본 설정 파일 복사
+    if [ ! -f "config.conf" ]; then
+        if [ -f "config.conf.default" ]; then
+            log_info "기본 설정 파일 복사 중 (config.conf.default → config.conf)..."
+            cp config.conf.default config.conf
+            log_success "기본 설정 파일 복사 완료"
+        else
+            log_warning "config.conf.default 파일이 없습니다. 프로그램 첫 실행 시 자동 생성됩니다."
+        fi
     else
-        log_info "설정 파일이 이미 존재합니다"
+        log_info "설정 파일이 이미 존재합니다 (config.conf)"
     fi
 }
 

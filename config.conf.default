@@ -1,0 +1,150 @@
+[LISTEN]
+host = 0.0.0.0
+port = 9000
+tls_enabled = False
+tls_cert =
+tls_key =
+hmac_enabled = False
+hmac_secret =
+require_signature = False
+
+[UI]
+tab_id_policy = by_ip
+layout = tabs
+grid_cols = 3
+tile_scale = 0.40
+header_scale = 1.50
+status_text_scale = 0.50
+
+[STANDARD]
+o2_normal_min = 19.5
+o2_normal_max = 23.0
+o2_concern_min = 19.0
+o2_concern_max = 23.0
+o2_caution_min = 18.5
+o2_caution_max = 23.3
+o2_warning_min = 18.0
+o2_warning_max = 23.5
+o2_danger_min = 17.0
+o2_danger_max = 24.0
+co2_normal_max = 1000.0
+co2_concern_max = 5000.0
+co2_caution_max = 10000.0
+co2_warning_max = 15000.0
+co2_danger_max = 20000.0
+co_normal_max = 9.0
+co_concern_max = 25.0
+co_caution_max = 30.0
+co_warning_max = 50.0
+co_danger_max = 100.0
+h2s_normal_max = 5.0
+h2s_concern_max = 8.0
+h2s_caution_max = 10.0
+h2s_warning_max = 15.0
+h2s_danger_max = 50.0
+temp_normal_min = 18.0
+temp_normal_max = 28.0
+temp_concern_min = 16.0
+temp_concern_max = 30.0
+temp_caution_min = 14.0
+temp_caution_max = 32.0
+temp_warning_min = 12.0
+temp_warning_max = 33.0
+temp_danger_min = 10.0
+temp_danger_max = 35.0
+hum_normal_min = 40.0
+hum_normal_max = 60.0
+hum_concern_min = 30.0
+hum_concern_max = 70.0
+hum_caution_min = 20.0
+hum_caution_max = 80.0
+hum_warning_min = 20.0
+hum_warning_max = 80.0
+hum_danger_min = 15.0
+hum_danger_max = 85.0
+hi_normal_max = 27.0
+hi_concern_max = 32.0
+hi_caution_max = 39.0
+hi_warning_max = 40.0
+hi_danger_max = 45.0
+di_normal_max = 68.0
+di_concern_max = 75.0
+di_caution_max = 80.0
+di_warning_max = 80.0
+di_danger_max = 85.0
+smoke_normal_max = 0.0
+smoke_concern_max = 10.0
+smoke_caution_max = 25.0
+smoke_warning_max = 50.0
+smoke_danger_max = 100.0
+lel_normal_max = 10.0
+lel_concern_max = 20.0
+lel_caution_max = 50.0
+lel_warning_max = 50.0
+lel_danger_max = 100.0
+ch4_normal_max = 10.0
+ch4_concern_max = 20.0
+ch4_caution_max = 50.0
+ch4_warning_max = 50.0
+ch4_danger_max = 100.0
+
+[ENV]
+temp_min = 18.0
+temp_max = 26.0
+temp_caution = 28.0
+temp_warning = 30.0
+temp_danger = 32.0
+hum_min = 30.0
+hum_max = 70.0
+safety_education_photo = True
+signature_recognition = True
+water_sensor_enabled = True
+ext_input_enabled = True
+ext_input_name = 외부접점
+ch4_sensor_enabled = True
+smoke_sensor_enabled = True
+screen_size = 1280x720
+graph_enabled = True
+allow_multi_graph_view = False
+max_sensors = 4
+ppe_detection_enabled = True
+ppe_helmet_enabled = True
+ppe_vest_enabled = True
+ppe_mask_enabled = True
+ppe_glasses_enabled = True
+ppe_gloves_enabled = True
+ppe_boots_enabled = True
+ppe_helmet_name = 헬멧
+ppe_vest_name = 조끼
+ppe_mask_name = 마스크
+ppe_glasses_name = 보안경
+ppe_gloves_name = 장갑
+ppe_boots_name = 안전화
+performance_mode = 2
+
+[CAMERA]
+device_id = 0
+device_index = 0
+resolution_width = 1280
+resolution_height = 720
+fps = 30
+auto_focus = True
+flip_horizontal = True
+ip_cameras = []
+use_ip_camera = False
+selected_ip_camera =
+ip_camera_url =
+ip_camera_name =
+device_name =
+
+[VALUE]
+text = 관계자외 출입을 금합니다.
+
+[AUTH]
+enabled = false
+users =
+
+[ADMIN]
+admin_password =
+password_changed = False
+admin_mode = False

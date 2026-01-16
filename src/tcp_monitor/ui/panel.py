@@ -605,6 +605,10 @@ class SensorPanel(ttk.Frame):
 
     def _create_fire_panel(self):
         """화재 패널 UI 생성 (좌측 사이드바)"""
+        # 이미 생성되어 있으면 스킵
+        if self.fire_alert_panel is not None:
+            return
+
         if not FIRE_MODULE_AVAILABLE or FireAlertPanel is None:
             return
 
