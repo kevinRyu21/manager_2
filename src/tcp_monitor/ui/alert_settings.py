@@ -384,7 +384,23 @@ class AlertSettingsDialog:
         
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
-        
+
+        # 마우스 휠 스크롤 바인딩 (Windows/macOS + Linux)
+        def _on_mousewheel(event):
+            if event.delta:
+                canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+            elif event.num == 4:
+                canvas.yview_scroll(-1, "units")
+            elif event.num == 5:
+                canvas.yview_scroll(1, "units")
+
+        canvas.bind("<MouseWheel>", _on_mousewheel)
+        canvas.bind("<Button-4>", _on_mousewheel)
+        canvas.bind("<Button-5>", _on_mousewheel)
+        scrollable_frame.bind("<MouseWheel>", _on_mousewheel)
+        scrollable_frame.bind("<Button-4>", _on_mousewheel)
+        scrollable_frame.bind("<Button-5>", _on_mousewheel)
+
         # 센서별 기본값 표시
         sensors_info = [
             ("💨 산소 (O₂)", "%", "range", [

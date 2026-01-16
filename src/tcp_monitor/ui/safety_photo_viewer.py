@@ -189,8 +189,10 @@ class SafetyPhotoViewer:
         self.grid_canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        # 캔버스 이벤트 바인딩
+        # 캔버스 이벤트 바인딩 (Windows/macOS + Linux)
         self.grid_canvas.bind("<MouseWheel>", self._on_mousewheel)
+        self.grid_canvas.bind("<Button-4>", self._on_mousewheel)  # Linux scroll up
+        self.grid_canvas.bind("<Button-5>", self._on_mousewheel)  # Linux scroll down
 
         # 선택된 항목 추적
         self.selected_items = set()
@@ -603,8 +605,16 @@ class SafetyPhotoViewer:
         self._load_hash_content()
 
     def _on_mousewheel(self, event):
-        """마우스 휠 스크롤"""
-        self.grid_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        """마우스 휠 스크롤 (Windows/macOS/Linux)"""
+        if event.delta:
+            # Windows/macOS
+            self.grid_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        elif event.num == 4:
+            # Linux scroll up
+            self.grid_canvas.yview_scroll(-1, "units")
+        elif event.num == 5:
+            # Linux scroll down
+            self.grid_canvas.yview_scroll(1, "units")
     
     def _on_photo_mousewheel(self, event):
         """사진 캔버스 마우스 휠 스크롤"""
