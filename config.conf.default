@@ -145,6 +145,6 @@ enabled = false
 users =
 
 [ADMIN]
-admin_password =
+admin_password = 859c458ace01e8f9a90403b37d0df1f80febe47d24756d0665f560dc1e17297d:2a890d996c65c79d7ca8f88bd38b52d3251ea172c283a957c95f1ec0fced5bff
 password_changed = False
 admin_mode = False
