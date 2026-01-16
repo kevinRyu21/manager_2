@@ -982,16 +982,29 @@ class SensorPanel(ttk.Frame):
                     except Exception:
                         pass
 
-                # 여전히 없으면 다른 인덱스도 시도 (1, 2)
+                # 여전히 없으면 다른 인덱스도 시도 (V4L2 sysfs 기반 검색)
                 if camera_index is None:
-                    for i in [1, 2]:
+                    import os
+                    for i in range(10):
+                        device_path = f"/dev/video{i}"
+                        if not os.path.exists(device_path):
+                            continue
+                        # 메타데이터 장치 필터링 (index != 0)
+                        index_path = f"/sys/class/video4linux/video{i}/index"
+                        if os.path.exists(index_path):
+                            try:
+                                with open(index_path, 'r') as f:
+                                    if f.read().strip() != '0':
+                                        continue
+                            except:
+                                continue
                         try:
-                            test_camera = cv2.VideoCapture(i)
+                            test_camera = cv2.VideoCapture(i, cv2.CAP_V4L2)
                             if test_camera.isOpened():
                                 ret, frame = test_camera.read()
                                 if ret and frame is not None:
                                     camera_index = i
-                                    backend_used = None
+                                    backend_used = cv2.CAP_V4L2
                                     test_camera.release()
                                     print(f"거울보기: 카메라 {i}을 찾았습니다.")
                                     break

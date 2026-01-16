@@ -430,41 +430,35 @@ class CameraSettingsDialog:
             print(f"카메라 가용성 재확인 오류: {e}")
 
     def _get_usb_cameras(self):
-        """USB 카메라 목록 검색"""
-        try:
-            import cv2
-        except ImportError:
-            return []
-
+        """USB 카메라 목록 검색 (V4L2 sysfs 기반 - 빠른 검색)"""
         cameras = []
 
-        # Linux: /dev/video* 장치 검색
-        video_devices = []
+        # Linux: /dev/video* 장치 검색 (sysfs index로 메타데이터 장치 필터링)
         for i in range(10):
             device_path = f"/dev/video{i}"
-            if os.path.exists(device_path):
-                video_devices.append(i)
+            if not os.path.exists(device_path):
+                continue
 
-        for idx in video_devices:
             try:
-                cap = cv2.VideoCapture(idx, cv2.CAP_V4L2)
-                if cap.isOpened():
-                    ret, frame = cap.read()
-                    if ret and frame is not None:
-                        name = f"카메라 {idx}"
-                        try:
-                            name_path = f"/sys/class/video4linux/video{idx}/name"
-                            if os.path.exists(name_path):
-                                with open(name_path, 'r') as f:
-                                    device_name = f.read().strip()
-                                    if device_name:
-                                        name = f"{device_name} ({idx})"
-                        except Exception:
-                            pass
-                        cameras.append((idx, name))
-                    cap.release()
-                else:
-                    cap.release()
+                # V4L2 index 파일로 메타데이터 장치 필터링
+                index_path = f"/sys/class/video4linux/video{i}/index"
+                if os.path.exists(index_path):
+                    with open(index_path, 'r') as f:
+                        idx_val = f.read().strip()
+                        if idx_val != '0':
+                            # 메타데이터 장치는 스킵 (index != 0)
+                            continue
+
+                # 장치 이름 읽기
+                name = f"카메라 {i}"
+                name_path = f"/sys/class/video4linux/video{i}/name"
+                if os.path.exists(name_path):
+                    with open(name_path, 'r') as f:
+                        device_name = f.read().strip()
+                        if device_name:
+                            name = f"{device_name} ({i})"
+
+                cameras.append((i, name))
             except Exception:
                 continue
 
