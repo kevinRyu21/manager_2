@@ -40,7 +40,18 @@ try:
     from .fire_alert_panel import FireAlertPanel
     from .fire_alert_dialog import FireAlertManager
     FIRE_MODULE_AVAILABLE = True
-except ImportError:
+    print("[화재 모듈] 로드 성공")
+except ImportError as e:
+    print(f"[화재 모듈] 로드 실패: {e}")
+    FireDetector = None
+    FireAlertLevel = None
+    SensorReading = None
+    FireAlertPanel = None
+    FireAlertManager = None
+except Exception as e:
+    print(f"[화재 모듈] 예외 발생: {e}")
+    import traceback
+    traceback.print_exc()
     FireDetector = None
     FireAlertLevel = None
     SensorReading = None
@@ -582,8 +593,13 @@ class SensorPanel(ttk.Frame):
             self.fire_alert_manager = FireAlertManager(self.app)
             print("[Fire] 화재 경보 관리자 초기화 완료")
 
+            # 화재 패널 UI 생성 (지연 생성 - UI 준비 후)
+            self.after(100, self._create_fire_panel)
+
         except Exception as e:
             print(f"[Fire] 화재 감지 시스템 초기화 실패: {e}")
+            import traceback
+            traceback.print_exc()
             self.fire_detector = None
             self.fire_alert_manager = None
 
