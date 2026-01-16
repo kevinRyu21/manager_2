@@ -60,7 +60,7 @@ class SensorPanel(ttk.Frame):
         self.app = app
         self.sid_key = sid_key
         self.mode = "main"
-        self.view_mode = "card"  # "card", "graph", "blueprint"
+        self.view_mode = "card"  # "card", "graph", "blueprint", "all_sensors"
         self.data = {}
         self.alert_manager = AlertManager(app.cfg)
         # 전역 스피커 상태 적용 (패널 재생성 시 상태 유지)
@@ -110,6 +110,9 @@ class SensorPanel(ttk.Frame):
 
         # 도면 뷰 컨테이너 (지연 생성)
         self.blueprint_view = None
+
+        # 센서전체보기 뷰 컨테이너 (지연 생성)
+        self.all_sensors_view = None
 
         # 상세 오버레이는 첫 클릭 시 지연 생성
         self.overlay = None
@@ -238,6 +241,8 @@ class SensorPanel(ttk.Frame):
             self.graph_view.pack_forget()
         if self.blueprint_view:
             self.blueprint_view.pack_forget()
+        if self.all_sensors_view:
+            self.all_sensors_view.pack_forget()
 
         # 타일 표시
         self.tiles_container.pack(side="top", fill="both", expand=True, padx=12, pady=12)
@@ -271,6 +276,8 @@ class SensorPanel(ttk.Frame):
         self.tiles_container.pack_forget()
         if self.blueprint_view:
             self.blueprint_view.pack_forget()
+        if self.all_sensors_view:
+            self.all_sensors_view.pack_forget()
 
         # 그래프 뷰 컨테이너 생성 (최초 1회)
         if self.graph_view is None:
@@ -343,6 +350,8 @@ class SensorPanel(ttk.Frame):
         self.tiles_container.pack_forget()
         if self.graph_view:
             self.graph_view.pack_forget()
+        if self.all_sensors_view:
+            self.all_sensors_view.pack_forget()
 
         # 도면 뷰 컨테이너 생성 (최초 1회)
         if self.blueprint_view is None:
@@ -355,6 +364,31 @@ class SensorPanel(ttk.Frame):
 
         # 버튼 상태 업데이트
         self.header.update_mode_buttons("blueprint")
+
+    def switch_to_all_sensors_mode(self):
+        """센서전체보기 모드로 전환 - 모든 센서 ID의 값을 분할화면으로 표시"""
+        if self.view_mode == "all_sensors":
+            return
+
+        # 다른 뷰 숨기기
+        self.tiles_container.pack_forget()
+        if self.graph_view:
+            self.graph_view.pack_forget()
+        if self.blueprint_view:
+            self.blueprint_view.pack_forget()
+
+        # 센서전체보기 뷰 컨테이너 생성 (최초 1회)
+        if self.all_sensors_view is None:
+            from .panel_all_sensors_view import AllSensorsView
+            self.all_sensors_view = AllSensorsView(self, self.app)
+
+        # 센서전체보기 표시
+        self.all_sensors_view.pack(side="top", fill="both", expand=True, padx=12, pady=12)
+        self.all_sensors_view.refresh()
+        self.view_mode = "all_sensors"
+
+        # 버튼 상태 업데이트
+        self.header.update_mode_buttons("all_sensors")
 
     def show_safety_education(self):
         """안전 교육 화면 표시 (오버레이)"""
@@ -494,6 +528,15 @@ class SensorPanel(ttk.Frame):
                 self._last_blueprint_update = now
                 self.blueprint_view.refresh_display()
 
+        # 센서전체보기 뷰 실시간 업데이트 (1초마다)
+        if not hasattr(self, '_last_all_sensors_update'):
+            self._last_all_sensors_update = 0
+
+        if self.view_mode == "all_sensors" and self.all_sensors_view is not None:
+            if now - self._last_all_sensors_update > 1.0:
+                self._last_all_sensors_update = now
+                self.all_sensors_view.update_sensor_data(self.sid_key, self.data, self._connection_status)
+
         # 알림 상태 변화 확인 (변경된 키만) - 5단계 시스템
         if self._connection_status == "connected":
             for k in changed_keys:
@@ -624,6 +667,12 @@ class SensorPanel(ttk.Frame):
                     }
                 )
 
+            # 헤더의 화재 정보 업데이트
+            level_value = result.alert_level.value if hasattr(result.alert_level, 'value') else result.alert_level
+            level_names = {1: "정상", 2: "관심", 3: "주의", 4: "경계", 5: "심각"}
+            level_name = level_names.get(level_value, "정상")
+            self.header.update_fire_info(result.fire_probability * 100, level_name)
+
             # 경보 레벨 3(주의) 이상이면 다이얼로그 표시
             level_value = result.alert_level.value if hasattr(result.alert_level, 'value') else result.alert_level
             if level_value >= 3 and self.fire_alert_manager is not None:
@@ -688,7 +737,7 @@ class SensorPanel(ttk.Frame):
         # 헤더 버튼 텍스트 동기화
         if hasattr(self, 'header') and hasattr(self.header, 'mirror_btn'):
             self.header.mirror_mode = True
-            self.header.mirror_btn.configure(text="거울끄기", bg="#F44336")
+            self.header.mirror_btn.configure(text="점검끄기", bg="#F44336")
 
         # 최신 프레임 저장 변수 초기화
         self.mirror_last_frame = None
@@ -774,7 +823,7 @@ class SensorPanel(ttk.Frame):
 
         # === 안전장구 패널 생성 (왼쪽) - 검정 배경 ===
         if not hasattr(self, 'mirror_ppe_panel') or self.mirror_ppe_panel is None:
-            self.mirror_ppe_panel = tk.Frame(self.mirror_content_frame, bg="#000000", width=250)
+            self.mirror_ppe_panel = tk.Frame(self.mirror_content_frame, bg="#000000", width=280)
             self.mirror_ppe_panel.pack_propagate(False)
 
         # PPE 인식 활성화 여부 확인
@@ -790,18 +839,18 @@ class SensorPanel(ttk.Frame):
         else:
             self.mirror_ppe_panel.pack_forget()
 
-        # 카메라 라벨 생성 (중앙)
+        # 카메라 라벨 생성 (중앙) - expand로 남은 공간을 모두 차지하여 중앙 배치
         if self.mirror_camera_label is None:
             self.mirror_camera_label = tk.Label(self.mirror_content_frame, bg="#000000", text="카메라 로딩 중...",
                                                font=("Pretendard", 24, "bold"), fg="#FFFFFF")
-        self.mirror_camera_label.pack(side="left", fill="both", expand=True)
+        self.mirror_camera_label.pack(side="left", fill="both", expand=True, anchor="center")
 
         # === 실시간 설정 미니 패널 생성 (좌측 하단 오버레이) ===
         self._create_realtime_settings_panel()
 
-        # === 사물 인식 패널 생성 (오른쪽) - 검정 배경 ===
+        # === 사물 인식 패널 생성 (오른쪽) - 검정 배경 (좌측 패널과 동일한 폭) ===
         if not hasattr(self, 'mirror_object_panel') or self.mirror_object_panel is None:
-            self.mirror_object_panel = tk.Frame(self.mirror_content_frame, bg="#000000", width=300)
+            self.mirror_object_panel = tk.Frame(self.mirror_content_frame, bg="#000000", width=280)
             self.mirror_object_panel.pack_propagate(False)
 
         # 사물 인식 활성화 여부 확인 (성능 모드 3 이상에서만)
@@ -834,9 +883,9 @@ class SensorPanel(ttk.Frame):
         if hasattr(self, 'header') and hasattr(self.header, 'mirror_btn'):
             self.header.mirror_mode = False
             if self.header.mirror_camera_ready:
-                self.header.mirror_btn.configure(text="거울보기", bg="#9C27B0")
+                self.header.mirror_btn.configure(text="장구점검", bg="#9C27B0")
             else:
-                self.header.mirror_btn.configure(text="거울 준비중", bg="#9C27B0", state="disabled")
+                self.header.mirror_btn.configure(text="장구점검", bg="#9C27B0", state="disabled")
 
         # 카메라 중지
         self._stop_mirror_camera()
@@ -872,12 +921,16 @@ class SensorPanel(ttk.Frame):
         if hasattr(self, 'mirror_content_frame') and self.mirror_content_frame:
             self.mirror_content_frame.pack_forget()
 
-        # 화재 패널 다시 표시 (거울보기 해제 시)
-        if hasattr(self, 'fire_alert_panel') and self.fire_alert_panel:
-            self.fire_alert_panel.pack(side="left", fill="y", padx=(0, 10), before=self.tiles_container)
-
-        # 타일 컨테이너 다시 표시
+        # 타일 컨테이너 먼저 다시 표시
         self.tiles_container.pack(side="top", fill="both", expand=True, padx=12, pady=12)
+
+        # 화재 패널 다시 표시 (거울보기 해제 시) - tiles_container가 pack된 후에
+        if hasattr(self, 'fire_alert_panel') and self.fire_alert_panel:
+            try:
+                self.fire_alert_panel.pack(side="left", fill="y", padx=(0, 10), before=self.tiles_container)
+            except Exception:
+                # before 옵션 실패 시 그냥 pack
+                self.fire_alert_panel.pack(side="left", fill="y", padx=(0, 10))
 
     def _start_mirror_camera(self):
         """거울보기용 카메라 시작 (빠른 초기화)"""
@@ -929,15 +982,36 @@ class SensorPanel(ttk.Frame):
             cached_index = getattr(self, '_cached_camera_index', None)
             cached_backend = getattr(self, '_cached_camera_backend', None)
 
-            # 설정에서 선택된 카메라가 있으면 우선 사용
-            if selected_idx is not None and selected_idx >= 0:
-                cached_index = selected_idx
-
             camera_index = None
             backend_used = None
 
-            # 캐시가 있으면 바로 시도
-            if cached_index is not None:
+            # 설정에서 선택된 카메라가 있으면 먼저 테스트
+            if selected_idx is not None and selected_idx >= 0:
+                import os
+                device_path = f"/dev/video{selected_idx}"
+                if os.path.exists(device_path):
+                    try:
+                        test_camera = cv2.VideoCapture(selected_idx, cv2.CAP_V4L2)
+                        if test_camera.isOpened():
+                            test_camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                            ret, frame = test_camera.read()
+                            if ret and frame is not None:
+                                camera_index = selected_idx
+                                backend_used = cv2.CAP_V4L2
+                                test_camera.release()
+                                print(f"거울보기: 설정된 카메라 {selected_idx} 사용")
+                            else:
+                                test_camera.release()
+                                print(f"거울보기: 설정된 카메라 {selected_idx} 프레임 읽기 실패")
+                        else:
+                            print(f"거울보기: 설정된 카메라 {selected_idx} 열기 실패")
+                    except Exception as e:
+                        print(f"거울보기: 설정된 카메라 {selected_idx} 테스트 오류: {e}")
+                else:
+                    print(f"거울보기: 설정된 카메라 {selected_idx} 장치 없음")
+
+            # 설정된 카메라가 실패하면 캐시된 카메라 시도
+            if camera_index is None and cached_index is not None:
                 try:
                     if cached_backend is not None:
                         test_camera = cv2.VideoCapture(cached_index, cached_backend)

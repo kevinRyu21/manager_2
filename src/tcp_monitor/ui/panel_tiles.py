@@ -481,30 +481,53 @@ class PanelTiles(ttk.Frame):
         # 성공 시 업데이트
         if self._weather_panel and "temp" in self._weather_panel:
             wp = self._weather_panel
-            
+
             # 온도 표시
             # data['temp']는 문자열(폴백) 또는 숫자 문자열(기상청)일 수 있음
             temp_text = data.get('temp')
             wp["temp"].configure(text=f"{temp_text}°C")
-            
+
             # 날씨 상태 표시
             wp["cond"].configure(text=data.get("cond", "정보없음"))
-            
+
             # 아이콘 설정
             if self.weather_api:
                 icon = self.weather_api.get_weather_icon(data.get("cond", ""), data.get("precipitation", "없음"))
             else:
                 icon = self._pick_icon(data.get("cond", ""))
             wp["icon"].configure(text=icon)
-            
+
             # 지역명 표시
             wp["loc"].configure(text=data.get("loc", "강원특별자치도, 춘천시"))
-            
+
             # 갱신 시간 표시
             try:
                 wp["updated"].configure(text=f"최종 갱신: {fmt_ts()}")
             except Exception:
                 pass
+
+        # 헤더의 날씨 정보 업데이트
+        try:
+            if hasattr(self.master, 'header'):
+                temp_val = None
+                humidity_val = None
+                temp_str = data.get('temp', '')
+                if temp_str and temp_str != '--':
+                    try:
+                        temp_val = float(temp_str)
+                    except (ValueError, TypeError):
+                        pass
+                hum_str = data.get('humidity', '')
+                if hum_str and hum_str != '--':
+                    try:
+                        humidity_val = float(hum_str)
+                    except (ValueError, TypeError):
+                        pass
+                condition = data.get("cond", "")
+                self.master.header.update_weather_info(temp_val, condition, humidity_val)
+                print(f"[헤더 날씨] 온도={temp_val}, 상태={condition}, 습도={humidity_val}")
+        except Exception as e:
+            print(f"헤더 날씨 업데이트 실패: {e}")
 
         # 다음 갱신 예약 (15분마다)
         self.after(900000, lambda: self._update_weather(tile))
