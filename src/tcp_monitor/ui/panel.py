@@ -1121,9 +1121,19 @@ class SensorPanel(ttk.Frame):
                 self.header.set_mirror_camera_ready(True)
             
         except Exception as e:
+            import traceback
             print(f"거울보기 카메라 시작 오류: {e}")
+            traceback.print_exc()
+
+            error_msg = str(e)
+            # 권한 오류 감지
+            if "Permission denied" in error_msg or "EACCES" in error_msg:
+                error_msg = "카메라 접근 권한 없음\n\n다음 명령 실행 후 재로그인:\nsudo usermod -aG video $USER"
+            elif "Device or resource busy" in error_msg:
+                error_msg = "카메라가 다른 프로그램에서\n사용 중입니다."
+
             if self.mirror_camera_label:
-                self.mirror_camera_label.configure(text=f"카메라 오류:\n{str(e)}", fg="#FF6B6B")
+                self.mirror_camera_label.configure(text=f"카메라 오류:\n{error_msg}", fg="#FF6B6B")
             # 실패 시 카메라 정리 및 버튼 상태 유지
             try:
                 if self.mirror_camera:
