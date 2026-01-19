@@ -206,15 +206,22 @@ class FireDetectionService:
         if not result:
             return {}
 
+        # sensor_contributions에서 기여도가 높은 센서를 triggered_sensors로 변환
+        triggered_sensors = []
+        if hasattr(result, 'sensor_contributions') and result.sensor_contributions:
+            triggered_sensors = [k for k, v in result.sensor_contributions.items() if v >= 0.1]
+
         return {
             "sensor_id": result.sensor_id,
             "timestamp": result.timestamp.isoformat() if result.timestamp else None,
             "fire_probability": result.fire_probability,
             "alert_level": result.alert_level.value if result.alert_level else 1,
             "alert_level_name": result.alert_level.korean_name if result.alert_level else "정상",
-            "triggered_sensors": result.triggered_sensors or [],
-            "combination_rules_triggered": result.combination_rules_triggered or [],
-            "confidence": result.confidence,
+            "triggered_sensors": triggered_sensors,
+            "triggered_rules": getattr(result, 'triggered_rules', []) or [],
+            "sensor_contributions": getattr(result, 'sensor_contributions', {}) or {},
+            "belief_fire": getattr(result, 'belief_fire', 0.0),
+            "uncertainty": getattr(result, 'uncertainty', 0.0),
         }
 
     def get_status(self) -> Dict[str, Any]:

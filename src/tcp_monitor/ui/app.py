@@ -2799,17 +2799,14 @@ class App(tk.Tk):
                 messagebox.showerror("저장 오류", f"설정 저장 중 오류가 발생했습니다:\n{str(e)}")
             
             # 모든 패널에 실시간 반영
-            formatted_text = None
             for p in self.panels.values():
                 try:
-                    if formatted_text is None:
-                        formatted_text = p._fmt_text(result[0])
-                    if hasattr(p, 'msg_label') and p.msg_label is not None:
-                        p.msg_label.configure(text=formatted_text)
-                        p._apply_header_font()
+                    # 헤더에 통합된 안전문구 업데이트
+                    if hasattr(p, 'header') and hasattr(p.header, 'update_safety_message'):
+                        p.header.update_safety_message(result[0])
                 except Exception as e:
                     print(f"[표시 문구 편집] 패널 반영 오류: {e}")
-            
+
             print(f"[표시 문구 편집] 모든 패널에 반영 완료")
 
     def _show_virtual_keyboard_for_text(self, text_widget):

@@ -109,10 +109,8 @@ class SensorPanel(ttk.Frame):
                                          relief="raised", bd=3, height=2)
         # pack은 하지 않고 필요할 때만 표시
 
-        # 안내 문구
-        self.msg_label = tk.Label(self, text=self._fmt_text(app.cfg.value_text), justify="left",
-                                 font=("Pretendard", 12), bg="#F0F8FF", fg="#2C3E50", relief="raised", bd=2)
-        self.msg_label.pack(side="top", fill="x", padx=15, pady=(0, 8))
+        # 안내 문구 (헤더에 통합됨)
+        self.msg_label = None  # 하위 호환성을 위해 유지
         self._apply_header_font()
 
         # 3x2 그리드 (타일 뷰)
@@ -205,7 +203,9 @@ class SensorPanel(ttk.Frame):
         scale = self.app.header_scale.get()
         sz = max(10, int(base * scale))
         try:
-            self.msg_label.configure(font=("Pretendard", sz))
+            # 헤더에 통합된 안전문구 폰트 업데이트
+            if hasattr(self.header, 'safety_msg_label') and self.header.safety_msg_label:
+                self.header.safety_msg_label.configure(font=("Pretendard", sz, "bold"))
         except Exception:
             pass
 

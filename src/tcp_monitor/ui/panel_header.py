@@ -128,9 +128,16 @@ class PanelHeader(tk.Frame):
 
         self.center_box = center_frame  # 하위 호환성
 
-        # === 우측 영역: 오늘경고 + 안전교육 + 뷰모드 버튼 ===
+        # === 우측 영역: 안전문구 + 버튼들 (통합) ===
         right_frame = tk.Frame(self, bg="#E8F4FD")
         right_frame.place(relx=1.0, x=-5, rely=0.5, anchor="e")
+
+        # 안전문구 표시 (가운데 정렬, 파란 배경)
+        safety_text = self._fmt_safety_text(app.cfg.value_text)
+        self.safety_msg_label = tk.Label(right_frame, text=safety_text, justify="center",
+                                        font=("Pretendard", 11, "bold"), bg="#1976D2", fg="#FFFFFF",
+                                        relief="raised", bd=2, padx=10, pady=2)
+        self.safety_msg_label.pack(side="left", padx=(0, 8))
 
         # 오늘 경고 버튼 (주의/경계/심각)
         self.alert_btn = tk.Button(right_frame, text="주의0/경계0/심각0", command=self._show_today_alerts,
@@ -175,6 +182,22 @@ class PanelHeader(tk.Frame):
         # 초기 상태
         self._update_button_states()
         self.after(500, self._tick_clock)
+
+    def _fmt_safety_text(self, t):
+        """안전문구 텍스트 포맷팅 (쉼표로 구분된 문구를 한 줄로)"""
+        if not t:
+            return ""
+        # 쉼표로 구분된 문구를 " | "로 연결
+        parts = [p.strip() for p in t.replace("\\n", " ").split(",") if p.strip()]
+        return " | ".join(parts)
+
+    def update_safety_message(self, text):
+        """안전문구 업데이트"""
+        try:
+            formatted = self._fmt_safety_text(text)
+            self.safety_msg_label.configure(text=formatted)
+        except Exception:
+            pass
 
     def _load_logo(self):
         """로고 로드"""
