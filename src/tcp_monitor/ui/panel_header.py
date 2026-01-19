@@ -18,10 +18,10 @@ except Exception:
 
 
 class PanelHeader(tk.Frame):
-    """패널 헤더 - 고정형 레이아웃"""
+    """패널 헤더 - 고정형 레이아웃 (2행 구조: 안전문구 + 컨트롤)"""
 
     def __init__(self, master, sid_key, app):
-        super().__init__(master, bg="#E8F4FD", relief="raised", bd=2, height=60)
+        super().__init__(master, bg="#E8F4FD", relief="raised", bd=2, height=90)
         self.pack_propagate(False)  # 고정 높이 유지
         self.app = app
         self.sid_key = sid_key
@@ -39,8 +39,23 @@ class PanelHeader(tk.Frame):
         # 날씨 정보
         self._weather_info = None
 
+        # === 상단 행: 안전문구 (가운데 정렬) ===
+        safety_row = tk.Frame(self, bg="#1976D2", height=30)
+        safety_row.pack(side="top", fill="x")
+        safety_row.pack_propagate(False)
+
+        safety_text = self._fmt_safety_text(app.cfg.value_text)
+        self.safety_msg_label = tk.Label(safety_row, text=safety_text, justify="center",
+                                        font=("Pretendard", 12, "bold"), bg="#1976D2", fg="#FFFFFF")
+        self.safety_msg_label.pack(expand=True)
+
+        # === 하단 행: 컨트롤 영역 ===
+        control_row = tk.Frame(self, bg="#E8F4FD", height=55)
+        control_row.pack(side="top", fill="both", expand=True)
+        control_row.pack_propagate(False)
+
         # === 좌측 영역: 로고 + 시계 + 음성 + 안전안전점검 ===
-        left_frame = tk.Frame(self, bg="#E8F4FD")
+        left_frame = tk.Frame(control_row, bg="#E8F4FD")
         left_frame.place(x=5, rely=0.5, anchor="w")
 
         # 로고
@@ -91,7 +106,7 @@ class PanelHeader(tk.Frame):
         self.admin_mode_btn = self.mode_toggle_btn
 
         # === 중앙 영역: 체감온도 + 불쾌지수 + 화재확률 + 날씨 ===
-        center_frame = tk.Frame(self, bg="#D1E7DD", relief="raised", bd=1)
+        center_frame = tk.Frame(control_row, bg="#D1E7DD", relief="raised", bd=1)
         center_frame.place(relx=0.5, rely=0.5, anchor="center")
 
         # 체감온도
@@ -128,16 +143,9 @@ class PanelHeader(tk.Frame):
 
         self.center_box = center_frame  # 하위 호환성
 
-        # === 우측 영역: 안전문구 + 버튼들 (통합) ===
-        right_frame = tk.Frame(self, bg="#E8F4FD")
+        # === 우측 영역: 버튼들 ===
+        right_frame = tk.Frame(control_row, bg="#E8F4FD")
         right_frame.place(relx=1.0, x=-5, rely=0.5, anchor="e")
-
-        # 안전문구 표시 (가운데 정렬, 파란 배경)
-        safety_text = self._fmt_safety_text(app.cfg.value_text)
-        self.safety_msg_label = tk.Label(right_frame, text=safety_text, justify="center",
-                                        font=("Pretendard", 11, "bold"), bg="#1976D2", fg="#FFFFFF",
-                                        relief="raised", bd=2, padx=10, pady=2)
-        self.safety_msg_label.pack(side="left", padx=(0, 8))
 
         # 오늘 경고 버튼 (주의/경계/심각)
         self.alert_btn = tk.Button(right_frame, text="주의0/경계0/심각0", command=self._show_today_alerts,
