@@ -168,7 +168,10 @@ class FireDetectionService:
                     self._on_level_change_callback(old_level, new_level)
 
             self._current_probability = result.fire_probability
-            self._triggered_sensors = result.triggered_sensors or []
+            # sensor_contributions에서 기여도가 높은 센서를 triggered_sensors로 변환
+            self._triggered_sensors = []
+            if result.sensor_contributions:
+                self._triggered_sensors = [k for k, v in result.sensor_contributions.items() if v >= 0.1]
 
             # 화재 경보 콜백 (임계값 이상일 때)
             if new_level >= self.config.alert_threshold:

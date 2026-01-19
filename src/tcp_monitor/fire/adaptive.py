@@ -660,10 +660,12 @@ class AdaptiveFireSystem:
     def __init__(
         self,
         config: Optional[AIAdaptationConfig] = None,
-        db_path: str = "data/fire_adaptive.db"
+        db_path: str = "data/fire_adaptive.db",
+        learning_state_path: str = "data/fire_learning_state.json"
     ):
         self.config = config or AIAdaptationConfig()
         self.db_path = db_path
+        self.learning_state_path = learning_state_path
 
         # 구성 요소 초기화
         self.stats_collector: Dict[str, Dict[str, OnlineStatistics]] = {}
@@ -678,8 +680,13 @@ class AdaptiveFireSystem:
         self.first_data_time: Optional[datetime] = None
         self.last_update_time: Optional[datetime] = None
         self.total_samples = 0
+        self._last_save_samples = 0  # 마지막 저장 시 샘플 수
+        self._save_interval = 100  # 100 샘플마다 저장
 
         self._lock = threading.Lock()
+
+        # 이전 학습 상태 로드
+        self.load_learning_state(self.learning_state_path)
 
     def _get_learning_phase(self) -> LearningPhase:
         """현재 학습 단계 결정"""
@@ -769,6 +776,11 @@ class AdaptiveFireSystem:
         self.profile_detector.update(reading)
 
         self.total_samples += 1
+
+        # 주기적으로 학습 상태 저장 (100샘플마다)
+        if self.total_samples - self._last_save_samples >= self._save_interval:
+            self.save_learning_state(self.learning_state_path)
+            self._last_save_samples = self.total_samples
 
     def update_thresholds(self) -> Tuple[bool, str]:
         """
@@ -954,3 +966,91 @@ class AdaptiveFireSystem:
             'days_elapsed': (datetime.now() - self.first_data_time).days if self.first_data_time else 0,
             'target_days': self.config.full_learning_days
         }
+
+    def save_learning_state(self, filepath: str = "data/fire_learning_state.json"):
+        """
+        학습 상태를 파일에 저장
+
+        Args:
+            filepath: 저장 경로
+        """
+        try:
+            # 디렉토리 생성
+            dir_path = os.path.dirname(filepath)
+            if dir_path and not os.path.exists(dir_path):
+                os.makedirs(dir_path, exist_ok=True)
+
+            state = {
+                'version': '2.0',
+                'saved_at': datetime.now().isoformat(),
+                'first_data_time': self.first_data_time.isoformat() if self.first_data_time else None,
+                'last_update_time': self.last_update_time.isoformat() if self.last_update_time else None,
+                'total_samples': self.total_samples,
+                'learning_phase': self.learning_phase.name,
+                'stats_collector': {}
+            }
+
+            # 센서별 통계 저장
+            with self._lock:
+                for sensor_id, sensor_stats in self.stats_collector.items():
+                    state['stats_collector'][sensor_id] = {}
+                    for sensor_type, stats in sensor_stats.items():
+                        state['stats_collector'][sensor_id][sensor_type] = stats.to_dict()
+
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(state, f, ensure_ascii=False, indent=2)
+
+            logger.info(f"학습 상태 저장 완료: {filepath}")
+            return True
+        except Exception as e:
+            logger.error(f"학습 상태 저장 오류: {e}")
+            return False
+
+    def load_learning_state(self, filepath: str = "data/fire_learning_state.json"):
+        """
+        학습 상태를 파일에서 로드
+
+        Args:
+            filepath: 로드 경로
+        """
+        try:
+            if not os.path.exists(filepath):
+                logger.info(f"학습 상태 파일 없음: {filepath}")
+                return False
+
+            with open(filepath, 'r', encoding='utf-8') as f:
+                state = json.load(f)
+
+            # 버전 확인
+            if state.get('version') != '2.0':
+                logger.warning(f"학습 상태 파일 버전 불일치: {state.get('version')}")
+                return False
+
+            # 상태 복원
+            if state.get('first_data_time'):
+                self.first_data_time = datetime.fromisoformat(state['first_data_time'])
+            if state.get('last_update_time'):
+                self.last_update_time = datetime.fromisoformat(state['last_update_time'])
+
+            self.total_samples = state.get('total_samples', 0)
+
+            # 학습 단계 복원
+            phase_name = state.get('learning_phase', 'COLD_START')
+            try:
+                self.learning_phase = LearningPhase[phase_name]
+            except KeyError:
+                self.learning_phase = LearningPhase.COLD_START
+
+            # 센서별 통계 복원
+            with self._lock:
+                self.stats_collector.clear()
+                for sensor_id, sensor_stats in state.get('stats_collector', {}).items():
+                    self.stats_collector[sensor_id] = {}
+                    for sensor_type, stats_data in sensor_stats.items():
+                        self.stats_collector[sensor_id][sensor_type] = OnlineStatistics.from_dict(stats_data)
+
+            logger.info(f"학습 상태 로드 완료: {filepath} (샘플: {self.total_samples})")
+            return True
+        except Exception as e:
+            logger.error(f"학습 상태 로드 오류: {e}")
+            return False
