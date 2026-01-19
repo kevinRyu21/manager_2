@@ -147,33 +147,64 @@ class FireAlertPanel(tk.Frame):
         separator = tk.Frame(self, bg="#333333", height=2)
         separator.pack(fill="x", padx=10, pady=10)
 
-        # 센서 상태 영역
-        sensor_title = tk.Label(
+        # AI 학습 상태 영역
+        ai_title = tk.Label(
             self,
-            text="센서 상태",
+            text="🤖 AI 학습 통계",
             font=("Pretendard", 14, "bold"),
             bg="#1A1A2E",
             fg="#FFFFFF"
         )
-        sensor_title.pack(pady=(5, 10))
+        ai_title.pack(pady=(5, 5))
 
-        # 센서 상태 리스트
-        self.sensor_list_frame = tk.Frame(self, bg="#1A1A2E")
-        self.sensor_list_frame.pack(fill="both", expand=True, padx=10, pady=5)
+        # 학습 단계 표시
+        self.learning_phase_frame = tk.Frame(self, bg="#16213E")
+        self.learning_phase_frame.pack(fill="x", padx=10, pady=5)
 
-        # 초기 센서 상태 표시
-        self._sensor_labels = {}
-        sensor_types = [
-            ("temperature", "온도", "🌡️"),
-            ("humidity", "습도", "💧"),
-            ("co", "CO", "🔥"),
-            ("co2", "CO2", "🏭"),
-            ("o2", "O2", "💨"),
-            ("smoke", "연기", "🌫️"),
-        ]
+        self.learning_phase_label = tk.Label(
+            self.learning_phase_frame,
+            text="단계: 대기중 | 샘플: 0",
+            font=("Pretendard", 10),
+            bg="#16213E",
+            fg="#94A3B8"
+        )
+        self.learning_phase_label.pack(pady=3)
 
-        for key, name, icon in sensor_types:
-            self._create_sensor_status_row(key, name, icon)
+        self.learning_progress_label = tk.Label(
+            self.learning_phase_frame,
+            text="진행: 0일 / 30일",
+            font=("Pretendard", 10),
+            bg="#16213E",
+            fg="#94A3B8"
+        )
+        self.learning_progress_label.pack(pady=3)
+
+        # 센서별 학습 통계 리스트 (스크롤 가능)
+        self.sensor_stats_frame = tk.Frame(self, bg="#1A1A2E")
+        self.sensor_stats_frame.pack(fill="both", expand=True, padx=5, pady=5)
+
+        # Canvas + Scrollbar for scrollable area
+        self.stats_canvas = tk.Canvas(self.sensor_stats_frame, bg="#1A1A2E", highlightthickness=0)
+        self.stats_scrollbar = tk.Scrollbar(self.sensor_stats_frame, orient="vertical", command=self.stats_canvas.yview)
+        self.stats_inner_frame = tk.Frame(self.stats_canvas, bg="#1A1A2E")
+
+        self.stats_canvas.configure(yscrollcommand=self.stats_scrollbar.set)
+
+        self.stats_scrollbar.pack(side="right", fill="y")
+        self.stats_canvas.pack(side="left", fill="both", expand=True)
+
+        self.stats_canvas_window = self.stats_canvas.create_window((0, 0), window=self.stats_inner_frame, anchor="nw")
+
+        self.stats_inner_frame.bind("<Configure>", self._on_stats_frame_configure)
+        self.stats_canvas.bind("<Configure>", self._on_canvas_configure)
+
+        # 마우스 휠 스크롤 바인딩
+        self.stats_canvas.bind("<MouseWheel>", self._on_mousewheel)
+        self.stats_canvas.bind("<Button-4>", self._on_mousewheel)
+        self.stats_canvas.bind("<Button-5>", self._on_mousewheel)
+
+        # 센서 학습 통계 저장용
+        self._sensor_stat_widgets = {}
 
         # 하단: 마지막 업데이트 시간
         self.update_time_label = tk.Label(
@@ -183,62 +214,174 @@ class FireAlertPanel(tk.Frame):
             bg="#1A1A2E",
             fg="#666666"
         )
-        self.update_time_label.pack(side="bottom", pady=10)
+        self.update_time_label.pack(side="bottom", pady=5)
 
-        # AI 적응 상태 표시
-        self.ai_status_frame = tk.Frame(self, bg="#16213E")
-        self.ai_status_frame.pack(side="bottom", fill="x", padx=5, pady=5)
+    def _on_stats_frame_configure(self, event):
+        """스크롤 영역 크기 업데이트"""
+        self.stats_canvas.configure(scrollregion=self.stats_canvas.bbox("all"))
 
-        self.ai_status_label = tk.Label(
-            self.ai_status_frame,
-            text="🤖 AI 학습: 대기중",
-            font=("Pretendard", 10),
-            bg="#16213E",
-            fg="#94A3B8"
-        )
-        self.ai_status_label.pack(pady=5)
+    def _on_canvas_configure(self, event):
+        """캔버스 크기에 맞춰 내부 프레임 너비 조정"""
+        self.stats_canvas.itemconfig(self.stats_canvas_window, width=event.width)
 
-    def _create_sensor_status_row(self, key: str, name: str, icon: str):
-        """센서 상태 행 생성"""
-        row = tk.Frame(self.sensor_list_frame, bg="#0F3460")
-        row.pack(fill="x", pady=2)
+    def _on_mousewheel(self, event):
+        """마우스 휠 스크롤"""
+        if event.delta:
+            self.stats_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        elif event.num == 4:
+            self.stats_canvas.yview_scroll(-1, "units")
+        elif event.num == 5:
+            self.stats_canvas.yview_scroll(1, "units")
 
-        # 아이콘 + 이름
-        left = tk.Frame(row, bg="#0F3460")
-        left.pack(side="left", padx=5, pady=3)
-
-        icon_label = tk.Label(
-            left,
-            text=icon,
-            font=("Pretendard", 12),
+    def _create_sensor_stats_widget(self, sensor_id: str):
+        """센서별 학습 통계 위젯 생성"""
+        # 센서 프레임
+        sensor_frame = tk.LabelFrame(
+            self.stats_inner_frame,
+            text=f"📡 {sensor_id}",
+            font=("Pretendard", 10, "bold"),
             bg="#0F3460",
-            fg="#FFFFFF"
+            fg="#FFD700",
+            relief="groove",
+            bd=2
         )
-        icon_label.pack(side="left")
+        sensor_frame.pack(fill="x", padx=5, pady=3)
 
-        name_label = tk.Label(
-            left,
-            text=name,
-            font=("Pretendard", 11),
-            bg="#0F3460",
-            fg="#FFFFFF"
-        )
-        name_label.pack(side="left", padx=5)
+        # 가스 센서 타입 정의
+        sensor_types = [
+            ("temperature", "온도", "℃"),
+            ("humidity", "습도", "%"),
+            ("co", "CO", "ppm"),
+            ("co2", "CO₂", "ppm"),
+            ("o2", "O₂", "%"),
+            ("smoke", "연기", ""),
+        ]
 
-        # 상태 표시
-        status_label = tk.Label(
-            row,
-            text="--",
-            font=("Pretendard", 11, "bold"),
-            bg="#0F3460",
-            fg="#27AE60"
-        )
-        status_label.pack(side="right", padx=10, pady=3)
+        stat_labels = {}
 
-        self._sensor_labels[key] = {
-            "row": row,
-            "status": status_label
+        for key, name, unit in sensor_types:
+            row = tk.Frame(sensor_frame, bg="#0F3460")
+            row.pack(fill="x", padx=3, pady=1)
+
+            # 센서 이름
+            name_label = tk.Label(
+                row,
+                text=f"{name}:",
+                font=("Pretendard", 9),
+                bg="#0F3460",
+                fg="#FFFFFF",
+                width=5,
+                anchor="w"
+            )
+            name_label.pack(side="left")
+
+            # 학습 통계 (평균±표준편차)
+            stat_label = tk.Label(
+                row,
+                text="--",
+                font=("Pretendard", 9, "bold"),
+                bg="#0F3460",
+                fg="#27AE60",
+                anchor="e"
+            )
+            stat_label.pack(side="right", padx=2)
+
+            # 샘플 수
+            sample_label = tk.Label(
+                row,
+                text="(n=0)",
+                font=("Pretendard", 8),
+                bg="#0F3460",
+                fg="#666666",
+                anchor="e"
+            )
+            sample_label.pack(side="right", padx=2)
+
+            stat_labels[key] = {
+                "stat": stat_label,
+                "sample": sample_label,
+                "unit": unit
+            }
+
+        self._sensor_stat_widgets[sensor_id] = {
+            "frame": sensor_frame,
+            "labels": stat_labels
         }
+
+        return sensor_frame
+
+    def _update_sensor_stats_widget(self, sensor_id: str, stats: Dict[str, Dict]):
+        """센서별 학습 통계 위젯 업데이트"""
+        if sensor_id not in self._sensor_stat_widgets:
+            self._create_sensor_stats_widget(sensor_id)
+
+        widget = self._sensor_stat_widgets[sensor_id]
+        labels = widget["labels"]
+
+        for key, data in stats.items():
+            if key in labels:
+                n = data.get('n', 0)
+                mean = data.get('mean', 0)
+                std = data.get('std', 0)
+                unit = labels[key]["unit"]
+
+                # 샘플 수에 따라 색상 변경
+                if n == 0:
+                    color = "#666666"
+                    stat_text = "--"
+                elif n < 100:
+                    color = "#F1C40F"  # 노랑 - 학습 중
+                    stat_text = f"{mean:.1f}±{std:.1f}"
+                else:
+                    color = "#27AE60"  # 녹색 - 충분한 데이터
+                    stat_text = f"{mean:.1f}±{std:.1f}"
+
+                labels[key]["stat"].configure(text=stat_text, fg=color)
+                labels[key]["sample"].configure(text=f"(n={n})")
+
+    def update_learning_stats(self, learning_summary: Dict):
+        """AI 학습 통계 업데이트"""
+        if not learning_summary:
+            return
+
+        # 학습 단계 업데이트
+        phase_korean = learning_summary.get('phase_korean', '대기중')
+        total_samples = learning_summary.get('total_samples', 0)
+        days_elapsed = learning_summary.get('days_elapsed', 0)
+        target_days = learning_summary.get('target_days', 30)
+
+        # 학습 단계에 따른 색상
+        phase_colors = {
+            '초기화': '#E74C3C',
+            '준비중': '#F1C40F',
+            '학습중': '#3498DB',
+            '적응완료': '#27AE60'
+        }
+        phase_color = phase_colors.get(phase_korean, '#94A3B8')
+
+        self.learning_phase_label.configure(
+            text=f"단계: {phase_korean} | 샘플: {total_samples:,}",
+            fg=phase_color
+        )
+        self.learning_progress_label.configure(
+            text=f"진행: {days_elapsed}일 / {target_days}일"
+        )
+
+        # 센서별 통계 업데이트
+        sensors = learning_summary.get('sensors', {})
+
+        # 기존에 없는 센서 위젯 제거
+        existing_sensors = set(self._sensor_stat_widgets.keys())
+        new_sensors = set(sensors.keys())
+
+        for old_sensor in existing_sensors - new_sensors:
+            if old_sensor in self._sensor_stat_widgets:
+                self._sensor_stat_widgets[old_sensor]["frame"].destroy()
+                del self._sensor_stat_widgets[old_sensor]
+
+        # 센서별 통계 업데이트
+        for sensor_id, sensor_stats in sensors.items():
+            self._update_sensor_stats_widget(sensor_id, sensor_stats)
 
     def _draw_progress_bar(self, probability: float):
         """화재 확률 프로그레스 바 그리기"""
@@ -314,33 +457,6 @@ class FireAlertPanel(tk.Frame):
         )
         self._draw_progress_bar(probability)
 
-        # 센서 상태 업데이트
-        if sensor_values:
-            for key, value in sensor_values.items():
-                if key in self._sensor_labels:
-                    is_triggered = key in self._triggered_sensors
-                    status_color = "#E74C3C" if is_triggered else "#27AE60"
-                    status_text = f"{value:.1f}" if isinstance(value, float) else str(value)
-
-                    self._sensor_labels[key]["status"].configure(
-                        text=status_text,
-                        fg=status_color
-                    )
-
-                    # 경보 발생 센서는 배경색 변경
-                    row_bg = "#3D1C1C" if is_triggered else "#0F3460"
-                    self._sensor_labels[key]["row"].configure(bg=row_bg)
-                    for child in self._sensor_labels[key]["row"].winfo_children():
-                        if isinstance(child, tk.Frame):
-                            child.configure(bg=row_bg)
-                            for subchild in child.winfo_children():
-                                subchild.configure(bg=row_bg)
-                        else:
-                            try:
-                                child.configure(bg=row_bg)
-                            except:
-                                pass
-
         # 업데이트 시간 표시
         self.update_time_label.configure(
             text=f"최종 갱신: {self._last_update.strftime('%H:%M:%S')}"
@@ -351,10 +467,6 @@ class FireAlertPanel(tk.Frame):
             self._start_blink_effect()
         else:
             self._stop_blink_effect()
-
-    def update_ai_status(self, status_text: str):
-        """AI 학습 상태 업데이트"""
-        self.ai_status_label.configure(text=f"🤖 {status_text}")
 
     def _start_blink_effect(self):
         """경보 깜빡임 효과 시작"""

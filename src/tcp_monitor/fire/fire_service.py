@@ -267,6 +267,28 @@ class FireDetectionService:
             print(f"[FireService] 임계값 업데이트 오류: {e}")
             return False
 
+    def get_learning_summary(self) -> Optional[Dict[str, Any]]:
+        """AI 학습 요약 정보 반환"""
+        if not self._adaptive_system:
+            return None
+
+        try:
+            return self._adaptive_system.get_learning_summary()
+        except Exception as e:
+            print(f"[FireService] 학습 요약 조회 오류: {e}")
+            return None
+
+    def get_sensor_learning_stats(self) -> Optional[Dict[str, Any]]:
+        """센서별 학습 통계 반환"""
+        if not self._adaptive_system:
+            return None
+
+        try:
+            return self._adaptive_system.get_sensor_learning_stats()
+        except Exception as e:
+            print(f"[FireService] 학습 통계 조회 오류: {e}")
+            return None
+
 
 # 전역 서비스 인스턴스 (싱글톤 패턴)
 _fire_service_instance: Optional[FireDetectionService] = None

@@ -902,3 +902,55 @@ class AdaptiveFireSystem:
                 })
 
         return comparison
+
+    def get_sensor_learning_stats(self) -> Dict[str, Dict[str, Dict]]:
+        """
+        센서별 학습 통계 반환
+
+        Returns:
+            {
+                'sensor01': {
+                    'temperature': {'n': 1000, 'mean': 25.3, 'std': 2.1, 'min': 18.0, 'max': 32.0},
+                    'co': {'n': 1000, 'mean': 5.2, 'std': 1.5, ...},
+                    ...
+                },
+                'sensor02': {...}
+            }
+        """
+        result = {}
+
+        with self._lock:
+            for sensor_id, sensor_stats in self.stats_collector.items():
+                result[sensor_id] = {}
+                for sensor_type, stats in sensor_stats.items():
+                    result[sensor_id][sensor_type] = {
+                        'n': stats.n,
+                        'mean': round(stats.mean, 2) if stats.n > 0 else 0.0,
+                        'std': round(stats.std, 2) if stats.n > 1 else 0.0,
+                        'min': round(stats.min_val, 2) if stats.n > 0 and stats.min_val != float('inf') else 0.0,
+                        'max': round(stats.max_val, 2) if stats.n > 0 and stats.max_val != float('-inf') else 0.0,
+                        'p95': round(stats.get_percentile(95), 2) if stats.n > 0 else 0.0
+                    }
+
+        return result
+
+    def get_learning_summary(self) -> Dict:
+        """
+        학습 요약 정보 반환 (UI 표시용)
+        """
+        sensor_stats = self.get_sensor_learning_stats()
+
+        return {
+            'phase': self.learning_phase.name,
+            'phase_korean': {
+                'COLD_START': '초기화',
+                'WARMUP': '준비중',
+                'LEARNING': '학습중',
+                'ADAPTIVE': '적응완료'
+            }.get(self.learning_phase.name, '대기'),
+            'total_samples': self.total_samples,
+            'sensors': sensor_stats,
+            'sensor_count': len(sensor_stats),
+            'days_elapsed': (datetime.now() - self.first_data_time).days if self.first_data_time else 0,
+            'target_days': self.config.full_learning_days
+        }

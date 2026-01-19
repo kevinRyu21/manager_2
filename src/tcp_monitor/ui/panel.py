@@ -37,6 +37,7 @@ except ImportError:
 FIRE_MODULE_AVAILABLE = False
 try:
     from ..fire import FireDetector, FireAlertLevel, SensorReading
+    from ..fire import get_fire_service
     from .fire_alert_panel import FireAlertPanel
     from .fire_alert_dialog import FireAlertManager
     FIRE_MODULE_AVAILABLE = True
@@ -48,6 +49,7 @@ except ImportError as e:
     SensorReading = None
     FireAlertPanel = None
     FireAlertManager = None
+    get_fire_service = None
 except Exception as e:
     print(f"[화재 모듈] 예외 발생: {e}")
     import traceback
@@ -57,6 +59,7 @@ except Exception as e:
     SensorReading = None
     FireAlertPanel = None
     FireAlertManager = None
+    get_fire_service = None
 
 
 class SensorPanel(ttk.Frame):
@@ -642,12 +645,32 @@ class SensorPanel(ttk.Frame):
             self.hide_fire_panel()
 
     def _update_fire_detection(self):
-        """화재 감지 업데이트 - 센서 데이터로 화재 확률 계산"""
-        if not FIRE_MODULE_AVAILABLE or self.fire_detector is None:
+        """화재 감지 업데이트 - 센서 데이터로 화재 확률 계산 및 AI 학습"""
+        if not FIRE_MODULE_AVAILABLE:
             return
 
-        # 현재 센서 데이터로 SensorReading 생성
         try:
+            # fire_service를 통해 데이터 처리 (AI 학습 데이터 수집 포함)
+            if get_fire_service is not None:
+                fire_service = get_fire_service()
+
+                # 센서 데이터 처리 (AI 학습 데이터 수집)
+                fire_service.process_sensor_data(
+                    sensor_id=self.sid,
+                    temperature=self.data.get('temperature'),
+                    humidity=self.data.get('humidity'),
+                    co=self.data.get('co'),
+                    co2=self.data.get('co2'),
+                    o2=self.data.get('o2'),
+                    smoke=self.data.get('smoke'),
+                    h2s=self.data.get('h2s'),
+                    ch4=self.data.get('lel')  # lel은 ch4로 매핑
+                )
+
+            # 로컬 화재 감지기로 UI 업데이트 (기존 로직 유지)
+            if self.fire_detector is None:
+                return
+
             from datetime import datetime
             reading = SensorReading(
                 sensor_id=self.sid,
@@ -659,7 +682,7 @@ class SensorPanel(ttk.Frame):
                 o2=self.data.get('o2'),
                 smoke=self.data.get('smoke'),
                 h2s=self.data.get('h2s'),
-                ch4=self.data.get('lel')  # lel은 ch4로 매핑
+                ch4=self.data.get('lel')
             )
 
             # 화재 감지 수행
@@ -676,16 +699,17 @@ class SensorPanel(ttk.Frame):
                 self.fire_alert_panel.update_fire_status(
                     level=result.alert_level.value if hasattr(result.alert_level, 'value') else result.alert_level,
                     probability=result.fire_probability,
-                    triggered_sensors=triggered,
-                    sensor_values={
-                        'temperature': self.data.get('temperature'),
-                        'humidity': self.data.get('humidity'),
-                        'co': self.data.get('co'),
-                        'co2': self.data.get('co2'),
-                        'o2': self.data.get('o2'),
-                        'smoke': self.data.get('smoke'),
-                    }
+                    triggered_sensors=triggered
                 )
+
+                # AI 학습 통계 업데이트
+                if get_fire_service is not None:
+                    try:
+                        learning_summary = fire_service.get_learning_summary()
+                        if learning_summary:
+                            self.fire_alert_panel.update_learning_stats(learning_summary)
+                    except Exception:
+                        pass
 
             # 헤더의 화재 정보 업데이트
             level_value = result.alert_level.value if hasattr(result.alert_level, 'value') else result.alert_level
