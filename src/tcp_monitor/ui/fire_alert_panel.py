@@ -206,15 +206,33 @@ class FireAlertPanel(tk.Frame):
         # 센서 학습 통계 저장용
         self._sensor_stat_widgets = {}
 
-        # 하단: 마지막 업데이트 시간
+        # 하단 프레임
+        bottom_frame = tk.Frame(self, bg="#1A1A2E")
+        bottom_frame.pack(side="bottom", fill="x", padx=5, pady=5)
+
+        # 도움말 버튼
+        help_btn = tk.Label(
+            bottom_frame,
+            text="❓ 알고리즘 도움말",
+            font=("Pretendard", 9),
+            bg="#1A1A2E",
+            fg="#3498DB",
+            cursor="hand2"
+        )
+        help_btn.pack(side="left", padx=5)
+        help_btn.bind("<Button-1>", lambda e: self._show_algorithm_help())
+        help_btn.bind("<Enter>", lambda e: help_btn.configure(fg="#5DADE2"))
+        help_btn.bind("<Leave>", lambda e: help_btn.configure(fg="#3498DB"))
+
+        # 마지막 업데이트 시간
         self.update_time_label = tk.Label(
-            self,
+            bottom_frame,
             text="최종 갱신: --:--:--",
-            font=("Pretendard", 10),
+            font=("Pretendard", 9),
             bg="#1A1A2E",
             fg="#666666"
         )
-        self.update_time_label.pack(side="bottom", pady=5)
+        self.update_time_label.pack(side="right", padx=5)
 
     def _on_stats_frame_configure(self, event):
         """스크롤 영역 크기 업데이트"""
@@ -514,3 +532,209 @@ class FireAlertPanel(tk.Frame):
     def get_fire_probability(self) -> float:
         """현재 화재 확률 반환"""
         return self._fire_probability
+
+    def _show_algorithm_help(self):
+        """AI 학습 알고리즘 도움말 팝업 표시"""
+        # 팝업 윈도우 생성
+        help_window = tk.Toplevel(self)
+        help_window.title("🔥 화재 감시 AI 알고리즘 도움말")
+        help_window.geometry("700x800")
+        help_window.configure(bg="#1A1A2E")
+        help_window.resizable(True, True)
+
+        # 중앙 배치
+        help_window.transient(self.winfo_toplevel())
+        help_window.grab_set()
+
+        # 스크롤 가능한 프레임
+        canvas = tk.Canvas(help_window, bg="#1A1A2E", highlightthickness=0)
+        scrollbar = tk.Scrollbar(help_window, orient="vertical", command=canvas.yview)
+        content_frame = tk.Frame(canvas, bg="#1A1A2E")
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        canvas_window = canvas.create_window((0, 0), window=content_frame, anchor="nw")
+
+        def on_configure(e):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            canvas.itemconfig(canvas_window, width=e.width)
+
+        content_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.bind("<Configure>", on_configure)
+
+        # 마우스 휠 스크롤
+        def on_mousewheel(event):
+            if event.delta:
+                canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+            elif event.num == 4:
+                canvas.yview_scroll(-1, "units")
+            elif event.num == 5:
+                canvas.yview_scroll(1, "units")
+
+        canvas.bind("<MouseWheel>", on_mousewheel)
+        canvas.bind("<Button-4>", on_mousewheel)
+        canvas.bind("<Button-5>", on_mousewheel)
+
+        # 제목
+        title = tk.Label(
+            content_frame,
+            text="🔥 화재 감시 5단계 경보 시스템",
+            font=("Pretendard", 18, "bold"),
+            bg="#1A1A2E",
+            fg="#FFFFFF"
+        )
+        title.pack(pady=(20, 10))
+
+        subtitle = tk.Label(
+            content_frame,
+            text="Dempster-Shafer 증거 이론 + AI 적응형 임계값",
+            font=("Pretendard", 12),
+            bg="#1A1A2E",
+            fg="#94A3B8"
+        )
+        subtitle.pack(pady=(0, 20))
+
+        # 섹션 생성 함수
+        def create_section(parent, title_text, content_text, title_color="#FFD700"):
+            frame = tk.Frame(parent, bg="#0F3460", relief="groove", bd=2)
+            frame.pack(fill="x", padx=20, pady=10)
+
+            title_label = tk.Label(
+                frame,
+                text=title_text,
+                font=("Pretendard", 14, "bold"),
+                bg="#0F3460",
+                fg=title_color
+            )
+            title_label.pack(anchor="w", padx=15, pady=(10, 5))
+
+            content_label = tk.Label(
+                frame,
+                text=content_text,
+                font=("Pretendard", 11),
+                bg="#0F3460",
+                fg="#FFFFFF",
+                justify="left",
+                wraplength=620
+            )
+            content_label.pack(anchor="w", padx=15, pady=(0, 10))
+
+        # 1. 학습 단계
+        create_section(
+            content_frame,
+            "📚 1. AI 학습 단계",
+            """• COLD_START (0일): 데이터 수집 시작, 표준 임계값 사용
+• WARMUP (1~7일): 충분한 데이터 축적 중, 아직 표준값 사용
+• LEARNING (7~30일): 통계 분석 시작, 환경 프로파일 생성
+• ADAPTIVE (30일+): 학습 완료, 설치 환경에 맞는 임계값 적용
+
+학습 데이터는 data/fire_learning_state.json에 저장되어
+프로그램 재시작 후에도 유지됩니다."""
+        )
+
+        # 2. 통계 수집
+        create_section(
+            content_frame,
+            "📊 2. 통계 수집 (Welford's Algorithm)",
+            """실시간 증분 통계 계산 (O(1) 메모리, O(1) 업데이트):
+
+• 평균 (mean): 센서값의 평균
+• 표준편차 (std): 값의 변동 폭
+• 최소/최대값: 관측된 범위
+• 95% 백분위수: Reservoir Sampling으로 계산
+
+표시 형식: 평균±표준편차 (n=샘플수)
+예: 25.3±2.1 (n=1234) → 온도 평균 25.3℃, 표준편차 2.1℃"""
+        )
+
+        # 3. 적응형 임계값
+        create_section(
+            content_frame,
+            "🎯 3. 적응형 임계값 계산",
+            """새 임계값 = 평균 + (k × 표준편차)
+
+• k=2: 95% 신뢰구간 (관심/주의)
+• k=3: 99.7% 신뢰구간 (경계/위험)
+
+예시 (CO₂ 센서):
+• 학습된 평균: 450ppm, 표준편차: 80ppm
+• 관심 임계값 = 450 + (2 × 80) = 610ppm
+• 주의 임계값 = 450 + (3 × 80) = 690ppm
+
+설치 환경에 따라 자동으로 최적화됩니다."""
+        )
+
+        # 4. 다중 센서 융합
+        create_section(
+            content_frame,
+            "🔗 4. 다중 센서 융합 (Dempster-Shafer)",
+            """여러 센서 데이터를 결합하여 화재 확률 계산:
+
+1. 각 센서 → 퍼지 멤버십 함수 → 화재 확률
+2. Dempster-Shafer 결합 규칙으로 확률 통합
+
+예시:
+  CO=30ppm  → μ(CO)=0.6  → m({Fire})=0.6
+  온도=45℃  → μ(T)=0.4   → m({Fire})=0.4
+  연기=20%  → μ(S)=0.8   → m({Fire})=0.8
+
+  → DS 결합 → 최종 화재 확률: 0.85 (85%)
+
+불확실성을 고려한 신뢰도 기반 판단을 수행합니다."""
+        )
+
+        # 5. 경보 레벨
+        create_section(
+            content_frame,
+            "🚨 5. 5단계 경보 레벨",
+            """화재 확률에 따른 경보 레벨 결정:
+
+┌─────────┬─────────┬─────────┬────────────────┐
+│  확률   │  레벨   │  색상   │      의미      │
+├─────────┼─────────┼─────────┼────────────────┤
+│  0~20%  │ 1단계   │  🟢녹색 │  정상          │
+│ 20~40%  │ 2단계   │  🟡노랑 │  관심 필요     │
+│ 40~60%  │ 3단계   │  🟠주황 │  주의 (경보)   │
+│ 60~80%  │ 4단계   │  🔴빨강 │  경계 (대피)   │
+│ 80~100% │ 5단계   │  🟣보라 │  위험 (긴급)   │
+└─────────┴─────────┴─────────┴────────────────┘
+
+3단계(주의) 이상에서 경보 다이얼로그가 표시됩니다.""",
+            "#E74C3C"
+        )
+
+        # 6. 센서 조합 규칙
+        create_section(
+            content_frame,
+            "⚡ 6. 센서 조합 규칙 (확률 부스트)",
+            """특정 센서 조합이 감지되면 화재 확률을 증폭:
+
+• 온도↑ + CO↑ + 연기↑ → ×1.5 부스트 (전형적 화재)
+• CO↑ + CO₂↑ → ×1.3 부스트 (불완전 연소)
+• 온도↑ + 습도↓ → ×1.2 부스트 (건조 환경)
+• 연기↑ + O₂↓ → ×1.4 부스트 (연소 진행)
+
+단일 센서 오류로 인한 오경보를 방지합니다."""
+        )
+
+        # 닫기 버튼
+        close_btn = tk.Button(
+            content_frame,
+            text="닫기",
+            font=("Pretendard", 12, "bold"),
+            bg="#3498DB",
+            fg="#FFFFFF",
+            activebackground="#2980B9",
+            activeforeground="#FFFFFF",
+            relief="raised",
+            bd=2,
+            width=15,
+            height=2,
+            command=help_window.destroy
+        )
+        close_btn.pack(pady=20)
+
+        # ESC 키로 닫기
+        help_window.bind("<Escape>", lambda e: help_window.destroy())
