@@ -836,6 +836,55 @@ set_permissions() {
     log_success "실행 권한 설정 완료"
 }
 
+# 바탕화면 바로가기 생성
+create_desktop_shortcut() {
+    log_info "바탕화면 바로가기 생성 중..."
+
+    INSTALL_DIR="$(pwd)"
+    DESKTOP_DIR="$HOME/Desktop"
+
+    # 바탕화면 디렉토리 확인 (한글/영어)
+    if [ ! -d "$DESKTOP_DIR" ]; then
+        DESKTOP_DIR="$HOME/바탕화면"
+    fi
+    if [ ! -d "$DESKTOP_DIR" ]; then
+        mkdir -p "$HOME/Desktop"
+        DESKTOP_DIR="$HOME/Desktop"
+    fi
+
+    # .desktop 파일 생성
+    DESKTOP_FILE="$DESKTOP_DIR/garame-manager.desktop"
+
+    cat > "$DESKTOP_FILE" << EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=GARAMe Manager
+Name[ko]=GARAMe 매니저
+Comment=Integrated Safety Management System
+Comment[ko]=통합 안전 관리 시스템
+Exec=bash -c 'cd "$INSTALL_DIR" && ./run.sh normal'
+Icon=$INSTALL_DIR/assets/logo.png
+Terminal=false
+Categories=Utility;Monitor;System;
+Keywords=sensor;monitor;safety;fire;
+StartupNotify=true
+StartupWMClass=garame-manager
+EOF
+
+    # 실행 권한 부여
+    chmod +x "$DESKTOP_FILE" 2>/dev/null || true
+
+    # 신뢰할 수 있는 앱으로 표시 (Ubuntu 20.04+)
+    gio set "$DESKTOP_FILE" metadata::trusted true 2>/dev/null || true
+
+    # applications 디렉토리에도 복사 (애플리케이션 메뉴에 표시)
+    mkdir -p "$HOME/.local/share/applications" 2>/dev/null || true
+    cp "$DESKTOP_FILE" "$HOME/.local/share/applications/" 2>/dev/null || true
+
+    log_success "바탕화면 바로가기 생성 완료: $DESKTOP_FILE"
+}
+
 # 시스템 설정 최적화 (화면 보호기, 절전, 알림 비활성화)
 optimize_system_settings() {
     log_info "시스템 설정 최적화 중... (화면 보호기, 절전 모드, 시스템 알림 비활성화)"
@@ -1182,6 +1231,10 @@ main() {
     # 10. PyInstaller 실행 파일 빌드 (선택)
     build_executable
     log_disk_usage "10. PyInstaller 빌드 완료"
+
+    # 11. 바탕화면 바로가기 생성
+    create_desktop_shortcut
+    log_disk_usage "11. 바탕화면 바로가기 생성 완료"
 
     # 최종 상태 기록
     log_disk_usage "99. 설치 완료 - 최종 상태"

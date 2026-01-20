@@ -101,6 +101,15 @@ def main():
     ap.add_argument("--config", type=str, default="config.conf", help="설정 파일 경로")
     args = ap.parse_args()
 
+    # 스플래시 화면 표시
+    splash = None
+    try:
+        from src.tcp_monitor.ui.splash_screen import SplashScreen
+        splash = SplashScreen()
+        splash.update_status("시스템 초기화 중...", 0)
+    except Exception as e:
+        print(f"[경고] 스플래시 화면 로드 실패: {e}")
+
     # 설정 파일 경로 (실행 파일/소스 디렉토리 기준)
     config_path = args.config
     if not os.path.isabs(config_path):
@@ -109,8 +118,16 @@ def main():
     if not os.path.exists(config_path):
         print(f"[경고] 설정 파일을 찾을 수 없습니다: {config_path}")
 
+    # 스플래시 업데이트: 설정 로드
+    if splash:
+        splash.update_status("설정 파일 로드 중...", 15)
+
     # 설정 로드
     cfg = ConfigManager(config_path)
+
+    # 스플래시 업데이트: AI 모델 로드
+    if splash:
+        splash.update_status("AI 모델 초기화 중...", 30)
 
     # AI 모델 사전 로드 (백그라운드에서 미리 로드하여 카메라 시작 속도 향상)
     # 성능 모드에 따라 필요한 모델만 로드 (1: 얼굴만, 2: 얼굴+PPE, 3: 전체)
@@ -131,14 +148,29 @@ def main():
         except Exception:
             pass
 
+        if splash:
+            splash.update_status("AI 모델 로드 중...", 50)
+
         preload_models_async(performance_mode)
     except Exception as e:
         print(f"[경고] AI 모델 사전 로드 실패: {e}")
+
+    # 스플래시 업데이트: 애플리케이션 생성
+    if splash:
+        splash.update_status("애플리케이션 생성 중...", 70)
 
     # 애플리케이션 생성
     print("[DEBUG] App 생성 시작...")
     app = App(cfg)
     print("[DEBUG] App 생성 완료")
+
+    # 스플래시 업데이트: 완료
+    if splash:
+        splash.update_status("시작 준비 완료!", 100)
+        # 잠시 대기 후 스플래시 닫기
+        import time
+        time.sleep(0.5)
+        splash.close()
 
     # 데이터 큐 생성
     q = queue.Queue()

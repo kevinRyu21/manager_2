@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=GARAMe Manager
+Name[ko]=GARAMe 매니저
+Comment=Integrated Safety Management System
+Comment[ko]=통합 안전 관리 시스템
+Exec=bash -c 'cd "%INSTALL_DIR%" && ./run.sh normal'
+Icon=%INSTALL_DIR%/assets/logo.png
+Terminal=false
+Categories=Utility;Monitor;System;
+Keywords=sensor;monitor;safety;fire;
+StartupNotify=true
+StartupWMClass=garame-manager

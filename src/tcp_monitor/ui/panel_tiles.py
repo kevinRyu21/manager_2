@@ -149,12 +149,14 @@ class PanelTiles(ttk.Frame):
         else:
             top_frame = tk.Frame(tile["right_frame"], bg="#FFFFFF", relief="raised", bd=2)
             top_frame.pack(fill="x", pady=(2, 3), padx=2)
-        
+        tile["top_frame"] = top_frame  # 나중에 배경색 유지를 위해 저장
+
         # 제목 라벨 - 개별 박스 제거, 흰색 바탕, 패딩 최소화
-        title_label = tk.Label(top_frame, text="경보 기준", 
-                              bg="#FFFFFF", fg="#000000", 
+        title_label = tk.Label(top_frame, text="경보 기준",
+                              bg="#FFFFFF", fg="#000000",
                               font=("Pretendard", 13, "bold"))
         title_label.pack(pady=(3, 2), anchor="center")
+        tile["alert_title_label"] = title_label  # 나중에 배경색 유지를 위해 저장
         
         # 각 단계별 기준값 표시 - 개별 박스 제거, 흰색 바탕, 패딩 최소화
         for level in range(1, 6):
@@ -180,13 +182,14 @@ class PanelTiles(ttk.Frame):
             # 다른 센서들은 기존 방식
             bottom_frame = tk.Frame(tile["right_frame"], bg="#FFFFFF", relief="raised", bd=2)
             bottom_frame.pack(fill="x", pady=(1, 1), padx=1)  # 패딩 최소화
-            
+            tile["bottom_frame"] = bottom_frame  # 나중에 배경색 유지를 위해 저장
+
             # 현재 상태 표시 라벨만 - 제목 제거, 센서값과 같은 크기, 패딩 최소화
             base_size = 25
             scale = float(self.app.status_text_scale.get())
             scaled_size = max(12, int(base_size * scale))
-            
-            current_status_label = tk.Label(bottom_frame, text="측정 중...", 
+
+            current_status_label = tk.Label(bottom_frame, text="측정 중...",
                                            bg="#FFFFFF", fg="#666666",
                                            font=("Pretendard", scaled_size, "bold"))
             current_status_label.pack(pady=(2, 2), anchor="center")  # 패딩 최소화
@@ -194,6 +197,7 @@ class PanelTiles(ttk.Frame):
         else:
             # 누수는 현재 상태 라벨 대신 날씨 패널을 사용하므로 None
             tile["current_status"] = None
+            tile["bottom_frame"] = None
 
     def _init_weather_api(self):
         """기상청 API 초기화"""
@@ -792,27 +796,36 @@ class PanelTiles(ttk.Frame):
         if not box:
             return
 
-        # 회색 배경
+        # 회색 배경 (좌측 센서값 영역만)
         bg = "#A0A0A0"
         fg = "#FFFFFF"
 
-        # 배경색 변경
+        # 좌측 센서값 영역만 회색으로 변경
         box["frame"].configure(bg=bg)
         box["main_frame"].configure(bg=bg)
         box["left_frame"].configure(bg=bg)
         box["title_frame"].configure(bg=bg)
-        # 경보 기준 영역은 항상 파랑색 유지
-        box["right_frame"].configure(bg="#1976D2")
         for k in ("val", "stat", "title"):
             box[k].configure(bg=bg, fg=fg)
         if box.get("icon"):
             box["icon"].configure(bg=bg, fg=fg)
 
+        # 경보 기준 영역은 항상 파랑색/흰색 유지 (변경 없음)
+        box["right_frame"].configure(bg="#1976D2")
+        # top_frame, bottom_frame, alert_levels는 흰색 배경 유지
+        if box.get("top_frame"):
+            box["top_frame"].configure(bg="#FFFFFF")
+        if box.get("bottom_frame"):
+            box["bottom_frame"].configure(bg="#FFFFFF")
+        if box.get("alert_title_label"):
+            box["alert_title_label"].configure(bg="#FFFFFF", fg="#000000")
+        for alert_label in box["alert_levels"]:
+            alert_label.configure(bg="#FFFFFF")  # 흰색 배경 유지 (글자색은 원래 색상)
+        if box.get("current_status"):
+            box["current_status"].configure(bg="#FFFFFF")
+
         # 현재 상태 업데이트 (통신 끊김 상태)
         self._update_current_status(key, value, 1)  # 통신 끊김은 정상으로 표시
-        # 경보 기준 영역의 라벨들도 업데이트
-        for alert_label in box["alert_levels"]:
-            alert_label.configure(bg="#E3F2FD")
 
         # 값 업데이트 (마지막 값 유지)
         box["val"].configure(text=value if value != "--" else "---")

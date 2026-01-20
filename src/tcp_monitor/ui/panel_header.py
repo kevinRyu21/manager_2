@@ -322,10 +322,20 @@ class PanelHeader(tk.Frame):
         tree.pack(fill="both", expand=True)
 
         level_map = {1: "정상", 2: "관심", 3: "주의", 4: "경계", 5: "심각"}
+        # 센서 키 → 한글명 매핑
+        sensor_name_map = {
+            'o2': '산소(O₂)', 'co2': '이산화탄소(CO₂)', 'co': '일산화탄소(CO)',
+            'h2s': '황화수소(H₂S)', 'temp': '온도', 'temperature': '온도',
+            'hum': '습도', 'humidity': '습도', 'hi': '체감온도', 'di': '불쾌지수',
+            'smoke': '연기', 'lel': '가연성가스(LEL)', 'ch4': '메탄(CH₄)',
+            'water': '침수', 'ext_input': '외부접점'
+        }
         for a in alerts:
-            ts = a.get('timestamp', '--')
+            # DB 필드명: ts, key / 메모리 필드명: timestamp, sensor
+            ts = a.get('ts') or a.get('timestamp', '--')
             sid = a.get('sid', '--')
-            sensor = a.get('sensor', '--')
+            sensor_key = a.get('key') or a.get('sensor', '--')
+            sensor = sensor_name_map.get(sensor_key, sensor_key)  # 한글명 변환
             lvl = level_map.get(a.get('level', 1), '--')
             val = a.get('value', '--')
             tree.insert('', 'end', values=(ts, sid, sensor, lvl, val))
