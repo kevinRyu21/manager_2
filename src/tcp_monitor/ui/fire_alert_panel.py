@@ -9,6 +9,14 @@ import tkinter as tk
 from tkinter import ttk
 from datetime import datetime
 from typing import Optional, Dict, List, Any
+import os
+
+# PIL 임포트
+try:
+    from PIL import Image, ImageTk
+    PIL_OK = True
+except ImportError:
+    PIL_OK = False
 
 # 화재 감지 모듈 임포트
 try:
@@ -65,11 +73,51 @@ class FireAlertPanel(tk.Frame):
         self._last_update = None  # 마지막 업데이트 시간
         self._detection_result = None  # 화재 감지 결과
 
+        # 화재 레벨 이미지 참조 저장
+        self._level_images = {}
+
         # 고정 너비 유지
         self.pack_propagate(False)
         self.configure(width=width)
 
+        # 이미지 로드
+        self._load_fire_level_images()
+
         self._build_ui()
+
+    def _load_fire_level_images(self):
+        """화재 레벨별 이미지 로드"""
+        if not PIL_OK:
+            print("[화재 패널] PIL 라이브러리 없음 - 이모지 사용")
+            return
+
+        # 레벨별 이미지 파일명 매핑
+        level_files = {
+            1: "fire_level_normal.png",
+            2: "fire_level_attention.png",
+            3: "fire_level_caution.png",
+            4: "fire_level_warning.png",
+            5: "fire_level_danger.png",
+        }
+
+        # assets 폴더 경로 찾기
+        from ..utils.helpers import find_asset
+
+        for level, filename in level_files.items():
+            try:
+                filepath = find_asset(filename)
+                if filepath and os.path.exists(filepath):
+                    img = Image.open(filepath)
+                    # 80x80 크기로 조정 (더 작고 예쁘게)
+                    img = img.resize((80, 80), Image.LANCZOS)
+                    # master 지정하여 PhotoImage 생성
+                    photo = ImageTk.PhotoImage(img, master=self)
+                    self._level_images[level] = photo
+                    print(f"[화재 패널] 레벨 {level} 이미지 로드 성공: {filepath}")
+                else:
+                    print(f"[화재 패널] 레벨 {level} 이미지 없음: {filename}")
+            except Exception as e:
+                print(f"[화재 패널] 레벨 {level} 이미지 로드 실패: {e}")
 
     def _build_ui(self):
         """UI 구성"""
@@ -90,15 +138,21 @@ class FireAlertPanel(tk.Frame):
         self.level_frame = tk.Frame(self, bg="#1A1A2E")
         self.level_frame.pack(fill="x", padx=10, pady=10)
 
-        # 경보 아이콘
+        # 경보 아이콘 (이미지 또는 이모지)
         self.level_icon_label = tk.Label(
             self.level_frame,
             text="🟢",
             font=("Pretendard", 48),
             bg="#1A1A2E",
-            fg="#FFFFFF"
+            fg="#FFFFFF",
+            borderwidth=0,
+            highlightthickness=0
         )
-        self.level_icon_label.pack(pady=5)
+        self.level_icon_label.pack(pady=10)
+
+        # 초기 이미지 설정
+        if self._level_images:
+            self._update_level_icon(1)
 
         # 경보 레벨 텍스트
         self.level_text_label = tk.Label(
@@ -445,6 +499,24 @@ class FireAlertPanel(tk.Frame):
                 width=1
             )
 
+    def _update_level_icon(self, level: int):
+        """화재 레벨 아이콘 업데이트 (이미지 또는 이모지)"""
+        if level in self._level_images:
+            # 이미지가 있으면 이미지 사용
+            self.level_icon_label.configure(
+                image=self._level_images[level],
+                text="",
+                bg="#1A1A2E"
+            )
+        else:
+            # 이미지가 없으면 이모지 사용
+            icon = self.ALERT_ICONS.get(level, "🟢")
+            self.level_icon_label.configure(
+                image="",
+                text=icon,
+                bg="#1A1A2E"
+            )
+
     def update_fire_status(
         self,
         level: int = 1,
@@ -461,11 +533,11 @@ class FireAlertPanel(tk.Frame):
         self._last_update = datetime.now()
 
         # 경보 레벨 표시 업데이트
-        icon = self.ALERT_ICONS.get(level, "🟢")
         name = self.ALERT_NAMES.get(level, "정상")
         color = self.ALERT_COLORS.get(level, "#27AE60")
 
-        self.level_icon_label.configure(text=icon)
+        # 아이콘 업데이트 (이미지 또는 이모지)
+        self._update_level_icon(level)
         self.level_text_label.configure(text=name, fg=color)
 
         # 화재 확률 업데이트

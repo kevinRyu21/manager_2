@@ -528,7 +528,9 @@ class PanelTiles(ttk.Frame):
                     except (ValueError, TypeError):
                         pass
                 condition = data.get("cond", "")
-                self.master.header.update_weather_info(temp_val, condition, humidity_val)
+                # 2.0.1 버전에만 있는 메서드이므로 존재 여부 확인
+                if hasattr(self.master.header, 'update_weather_info'):
+                    self.master.header.update_weather_info(temp_val, condition, humidity_val)
                 print(f"[헤더 날씨] 온도={temp_val}, 상태={condition}, 습도={humidity_val}")
         except Exception as e:
             print(f"헤더 날씨 업데이트 실패: {e}")

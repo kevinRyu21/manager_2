@@ -83,7 +83,7 @@ class AlertSettingsDialog:
                           "주의 최소", "주의 최대", "경계 최소", "경계 최대",
                           "심각 최소", "심각 최대"]
             },
-            "누수 감지": {
+            "🚿 누수 감지": {
                 "unit": "",
                 "type": "binary",
                 "keys": ["water_normal", "water_warning"],
@@ -93,16 +93,19 @@ class AlertSettingsDialog:
         
     def show(self):
         """설정 다이얼로그 표시"""
+        print("[5단계 설정] show() 메서드 호출됨")
         self.dialog = tk.Toplevel(self.parent)
         self.dialog.title("5단계 경보 시스템 설정")
         self.dialog.geometry("1000x700")
         self.dialog.resizable(True, True)
-        
+
         # 다이얼로그가 닫힐 때까지 대기
         self.dialog.transient(self.parent)
         self.dialog.grab_set()
-        
+
+        print("[5단계 설정] 다이얼로그 생성 완료, 위젯 생성 시작")
         self._create_widgets()
+        print("[5단계 설정] 위젯 생성 완료, 값 로드 시작")
         self._load_current_values()
         # 초기값 스냅샷 저장 (변경 감지용)
         self._initial_values = {k: str(self.config.std.get(k, "")) for k in self.entries.keys()}
@@ -156,18 +159,29 @@ class AlertSettingsDialog:
         # 버튼 프레임
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill="x", pady=(20, 0))
-        
-        # 기본값 복원 버튼 - 폰트 크기 증가
-        reset_btn = ttk.Button(button_frame, text="국가 기준값 초기화", command=self._reset_to_defaults)
+
+        print("[5단계 설정] 버튼 프레임 생성 완료")
+
+        # 기본값 복원 버튼 - tk.Button으로 변경하여 가시성 확보
+        reset_btn = tk.Button(button_frame, text="국가 기준값 초기화", command=self._reset_to_defaults,
+                             font=("Arial", 12), bg="#E74C3C", fg="white",
+                             relief="raised", bd=2, padx=10, pady=5)
         reset_btn.pack(side="left", padx=(0, 10))
-        
-        # 저장 버튼 - 폰트 크기 증가
-        save_btn = ttk.Button(button_frame, text="설정 저장", command=self._save_settings)
+        print(f"[5단계 설정] 초기화 버튼 생성: {reset_btn}")
+
+        # 저장 버튼 - tk.Button으로 변경
+        save_btn = tk.Button(button_frame, text="설정 저장", command=self._save_settings,
+                            font=("Arial", 12, "bold"), bg="#27AE60", fg="white",
+                            relief="raised", bd=2, padx=10, pady=5)
         save_btn.pack(side="right", padx=(10, 0))
-        
-        # 닫기 버튼 - 폰트 크기 증가
-        cancel_btn = ttk.Button(button_frame, text="닫기", command=self._cancel)
+        print(f"[5단계 설정] 저장 버튼 생성: {save_btn}")
+
+        # 닫기 버튼 - tk.Button으로 변경
+        cancel_btn = tk.Button(button_frame, text="닫기", command=self._cancel,
+                              font=("Arial", 12), bg="#95A5A6", fg="white",
+                              relief="raised", bd=2, padx=10, pady=5)
         cancel_btn.pack(side="right")
+        print(f"[5단계 설정] 닫기 버튼 생성: {cancel_btn}")
         
     def _create_sensor_section(self, parent, sensor_name, config, row, col):
         """센서별 설정 섹션 생성 (그리드 배치)"""

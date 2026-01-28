@@ -223,7 +223,8 @@ class CaptureManager:
                 w = self.preview_w
                 h = self.preview_h
                 im.thumbnail((w-20, h-20))
-                self.img_ref = ImageTk.PhotoImage(im)
+                # master 지정하여 이미지 생성
+                self.img_ref = ImageTk.PhotoImage(im, master=self.preview)
                 self.preview.delete("all")
                 # 중앙 배치
                 cx = w//2

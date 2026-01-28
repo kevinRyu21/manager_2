@@ -2066,7 +2066,16 @@ class App(tk.Tk):
                 p._hide_overlay()
         except Exception:
             pass
-        self.destroy()
+
+        # Python 3.13에서 tkinter destroy() 시 Tcl 에러 발생 - 강제 종료 사용
+        try:
+            self.quit()  # 메인루프 종료
+        except Exception:
+            pass
+
+        # 프로세스 강제 종료
+        import sys
+        sys.exit(0)
 
     def _heartbeat_loop(self):
         """매니저 하트비트 파일 주기적 갱신"""
@@ -2857,16 +2866,25 @@ class App(tk.Tk):
 
     def edit_alert_settings(self):
         """5단계 경보 시스템 설정 편집"""
+        print("[App] edit_alert_settings() 호출됨")
         from tkinter import messagebox
         if not self.cfg.admin_mode:
+            print("[App] 관리자 모드가 아님 - 접근 거부")
             messagebox.showerror("접근 거부", "관리자 모드에서만 접근할 수 있습니다.")
             return
-            
+
         try:
+            print("[App] AlertSettingsDialog 임포트 시작")
             from .alert_settings import AlertSettingsDialog
+            print("[App] AlertSettingsDialog 생성 시작")
             dialog = AlertSettingsDialog(self, self.cfg)
+            print("[App] AlertSettingsDialog.show() 호출")
             dialog.show()
+            print("[App] AlertSettingsDialog.show() 완료")
         except Exception as e:
+            print(f"[App] AlertSettingsDialog 오류: {e}")
+            import traceback
+            traceback.print_exc()
             messagebox.showerror("오류", f"설정 창을 열 수 없습니다:\n{str(e)}")
 
     def edit_thresholds(self):

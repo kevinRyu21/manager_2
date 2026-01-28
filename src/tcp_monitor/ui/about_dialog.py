@@ -188,7 +188,8 @@ class AboutDialog:
                     new_width = int(max_size * aspect_ratio)
 
                 logo_img = logo_img.resize((new_width, new_height), Image.LANCZOS)
-                logo_photo = ImageTk.PhotoImage(logo_img)
+                # master 지정하여 이미지 생성
+                logo_photo = ImageTk.PhotoImage(logo_img, master=main_frame)
                 logo_label = tk.Label(main_frame, image=logo_photo, bg="#F5F5F5")
                 logo_label.image = logo_photo  # 참조 유지
                 logo_label.pack(pady=(0, 8))  # 간격 축소

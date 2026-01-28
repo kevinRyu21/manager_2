@@ -484,7 +484,7 @@ class SafetyPhotoViewer:
             )
 
             # 체크박스 변수 생성
-            var = tk.BooleanVar()
+            var = tk.BooleanVar(master=self.dialog)
             self.checkbox_vars.append(var)
 
             # 실제 tkinter Checkbutton 사용
@@ -846,8 +846,8 @@ class SafetyPhotoViewer:
                 img_copy = img.copy()
                 img_copy.thumbnail((display_width, display_height), Image.LANCZOS)
 
-                # PhotoImage로 변환
-                photo = ImageTk.PhotoImage(img_copy)
+                # PhotoImage로 변환 (master 지정)
+                photo = ImageTk.PhotoImage(img_copy, master=self.photo_canvas)
 
                 # 캐시에 저장 (최대 10개까지만)
                 if len(self.image_cache) >= 10:
@@ -1447,7 +1447,7 @@ class SafetyPhotoViewer:
         format_frame = tk.Frame(format_dialog, bg="#34495E")
         format_frame.pack(pady=20)
 
-        self.selected_format = tk.StringVar(value="zip")
+        self.selected_format = tk.StringVar(master=format_dialog, value="zip")
 
         formats = [
             ("ZIP 압축 파일 (.zip)", "zip"),
@@ -1867,7 +1867,7 @@ class SafetyPhotoViewer:
         tk.Label(purpose_frame, text="반출 목적:", font=("Pretendard", 12, "bold"),
                 bg="#2C3E50", fg="#FFFFFF", width=12, anchor="w").pack(side="left")
 
-        purpose_var = tk.StringVar()
+        purpose_var = tk.StringVar(master=export_dialog)
         purpose_entry = tk.Entry(purpose_frame, textvariable=purpose_var,
                                 font=("Pretendard", 12), width=40)
         purpose_entry.pack(side="left", padx=10, fill="x", expand=True)
@@ -1879,7 +1879,7 @@ class SafetyPhotoViewer:
         tk.Label(exporter_frame, text="반출자:", font=("Pretendard", 12, "bold"),
                 bg="#2C3E50", fg="#FFFFFF", width=12, anchor="w").pack(side="left")
 
-        exporter_var = tk.StringVar()
+        exporter_var = tk.StringVar(master=export_dialog)
         exporter_entry = tk.Entry(exporter_frame, textvariable=exporter_var,
                                  font=("Pretendard", 12), width=40)
         exporter_entry.pack(side="left", padx=10, fill="x", expand=True)
@@ -1900,7 +1900,7 @@ class SafetyPhotoViewer:
             os.makedirs(export_dir, exist_ok=True)
         default_path = os.path.join(export_dir, default_filename)
 
-        path_var = tk.StringVar(value=default_path)
+        path_var = tk.StringVar(master=export_dialog, value=default_path)
         path_entry = tk.Entry(path_frame, textvariable=path_var,
                              font=("Pretendard", 11), width=35)
         path_entry.pack(side="left", padx=10, fill="x", expand=True)
@@ -2434,7 +2434,7 @@ class SafetyPhotoViewer:
         tk.Label(period_frame, text="반출 기간:",
                 font=("Pretendard", 11), bg="#2C3E50", fg="#FFFFFF").pack(side="left", padx=5)
 
-        date_from_var = tk.StringVar(value="")
+        date_from_var = tk.StringVar(master=history_dialog, value="")
         date_from_entry = tk.Entry(period_frame, textvariable=date_from_var,
                                   font=("Pretendard", 11), width=12)
         date_from_entry.pack(side="left", padx=3)
@@ -2444,7 +2444,7 @@ class SafetyPhotoViewer:
         tk.Label(period_frame, text="~",
                 font=("Pretendard", 11, "bold"), bg="#2C3E50", fg="#FFFFFF").pack(side="left", padx=3)
 
-        date_to_var = tk.StringVar(value="")
+        date_to_var = tk.StringVar(master=history_dialog, value="")
         date_to_entry = tk.Entry(period_frame, textvariable=date_to_var,
                                 font=("Pretendard", 11), width=12)
         date_to_entry.pack(side="left", padx=3)
@@ -2458,7 +2458,7 @@ class SafetyPhotoViewer:
         tk.Label(exporter_search_frame, text="반출자:",
                 font=("Pretendard", 11), bg="#2C3E50", fg="#FFFFFF").pack(side="left", padx=5)
 
-        exporter_search_var = tk.StringVar()
+        exporter_search_var = tk.StringVar(master=history_dialog)
         exporter_search_entry = tk.Entry(exporter_search_frame, textvariable=exporter_search_var,
                                         font=("Pretendard", 11), width=15)
         exporter_search_entry.pack(side="left", padx=3)

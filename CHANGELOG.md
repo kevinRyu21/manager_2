@@ -1,5 +1,64 @@
 # GARAMe MANAGER - 변경 이력
 
+## v2.1.0 (2026-01-28)
+
+### 🐛 버그 수정 (Python 3.13 호환성)
+
+#### 이미지 로딩 문제 해결
+- ✅ **PhotoImage 가비지 컬렉션**: Python 3.13 tkinter에서 이미지 표시 안되는 문제 해결
+  - 모든 ImageTk.PhotoImage에 명시적 master 파라미터 추가
+  - 로고, About 다이얼로그, 안전교육 사진, 캡쳐 이미지, 화재 레벨 아이콘 정상 표시
+
+#### 프로그램 종료 개선
+- ✅ **Tcl 명령 오류 해결**: `invalid command name` 오류 수정
+  - after() 콜백 ID 추적 및 destroy 시 취소
+  - quit() + sys.exit(0) 방식으로 종료 처리 개선
+
+#### UI 컴포넌트 수정
+- ✅ **5단계 경고 설정 버튼**: KeyError 및 버튼 표시 문제 해결
+  - 센서 설정 딕셔너리 키 일관성 확보 (이모지 추가)
+  - ttk.Button → tk.Button 변경 (명시적 색상)
+- ✅ **panel_tiles.py 호환성**: hasattr 체크 추가
+
+### 🎨 UI 개선
+
+#### 화재 레벨 아이콘
+- ✅ **전문 디자인 아이콘 5개 생성**:
+  - 레벨 1: 초록색 원 + ✓ (정상)
+  - 레벨 2: 노란색 원 + ⚠ (주의)
+  - 레벨 3: 주황색 원 + 🔥 (경계)
+  - 레벨 4: 빨간색 원 + 🔥 (경고)
+  - 레벨 5: 진한 빨간색 원 + 🔥 (위험)
+  - RGBA 투명 배경, 80x80 크기, 레벨 번호 표시
+
+### 🧪 테스트 도구
+
+#### 센서 시뮬레이터
+- ✅ **다중 센서 테스트 클라이언트** (sensor_simulator.py)
+  - 센서 ID 1-4 동시 접속
+  - 13가지 시나리오: 정상, 화재 4단계, CO2/CO/O2/H2S/CH4 위험, 연기, 누수, 랜덤
+  - 9개 센서 데이터 생성 (CO2, CO, O2, H2S, CH4, 온도, 습도, 연기, 누수)
+  - TCP v2.0 프로토콜 완벽 지원
+  - GUI 컨트롤 패널 및 실시간 로그
+
+### 📦 수정된 파일
+- `src/tcp_monitor/ui/panel_header.py`
+- `src/tcp_monitor/ui/about_dialog.py`
+- `src/tcp_monitor/ui/splash_screen.py`
+- `src/tcp_monitor/ui/safety_photo_viewer.py`
+- `src/tcp_monitor/ui/capture_manager.py`
+- `src/tcp_monitor/ui/fire_alert_panel.py`
+- `src/tcp_monitor/ui/alert_settings.py`
+- `src/tcp_monitor/ui/panel_tiles.py`
+- `src/tcp_monitor/ui/app.py`
+
+### 📚 문서
+- ✅ [CHANGELOG_v2.1.0.md](CHANGELOG_v2.1.0.md) - 상세 변경 이력
+- ✅ [docs/SENSOR_SIMULATOR_GUIDE.md](docs/SENSOR_SIMULATOR_GUIDE.md) - 센서 시뮬레이터 완전 가이드 (473줄)
+- ✅ README.md - v2.1.0 업데이트
+
+---
+
 ## v2.0.1 (2026-01-16)
 
 ### 🔧 UI 개선

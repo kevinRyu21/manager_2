@@ -39,6 +39,9 @@ class PanelHeader(tk.Frame):
         # 날씨 정보
         self._weather_info = None
 
+        # after 콜백 ID 저장 (종료 시 취소용)
+        self._tick_clock_after_id = None
+
         # === 상단 행: 안전문구 (가운데 정렬) ===
         safety_row = tk.Frame(self, bg="#1976D2", height=30)
         safety_row.pack(side="top", fill="x")
@@ -209,20 +212,39 @@ class PanelHeader(tk.Frame):
 
     def _load_logo(self):
         """로고 로드"""
-        if PIL_OK:
-            p = find_asset("logo.png")
-            if p:
-                try:
-                    im = Image.open(p)
-                    target_h = 40
-                    ratio = target_h / max(im.height, 1)
-                    im = im.resize((max(int(im.width * ratio), 1), target_h), Image.LANCZOS)
-                    self.logo_imgref = ImageTk.PhotoImage(im)
-                    self.logo_label.configure(image=self.logo_imgref, text="", bg="#E8F4FD")
-                    return
-                except Exception:
-                    pass
-        self.logo_label.configure(image="", text="GARAMe", font=("Pretendard", 10, "bold"))
+        if not PIL_OK:
+            print("[로고 로드] PIL 라이브러리 없음 - 텍스트로 표시")
+            self.logo_label.configure(image="", text="GARAMe", font=("Pretendard", 10, "bold"))
+            return
+
+        p = find_asset("logo.png")
+        if not p:
+            print("[로고 로드] logo.png 파일을 찾을 수 없음")
+            self.logo_label.configure(image="", text="GARAMe", font=("Pretendard", 10, "bold"))
+            return
+
+        try:
+            # 위젯이 존재하는지 확인
+            if not self.winfo_exists():
+                print("[로고 로드] 위젯이 아직 준비되지 않음 - 재시도")
+                self.after(100, self._load_logo)
+                return
+
+            print(f"[로고 로드] 파일 로드 시도: {p}")
+            im = Image.open(p)
+            target_h = 40
+            ratio = target_h / max(im.height, 1)
+            im = im.resize((max(int(im.width * ratio), 1), target_h), Image.LANCZOS)
+            # master를 명시적으로 지정하여 이미지 생성
+            self.logo_imgref = ImageTk.PhotoImage(im, master=self.logo_label)
+            self.logo_label.configure(image=self.logo_imgref, text="", bg="#E8F4FD")
+            print(f"[로고 로드] 성공: {p}")
+            return
+        except Exception as e:
+            print(f"[로고 로드] 실패: {e}")
+            import traceback
+            traceback.print_exc()
+            self.logo_label.configure(image="", text="GARAMe", font=("Pretendard", 10, "bold"))
 
     def _show_control_buttons(self):
         """컨트롤 버튼들 표시 - 이미 배치됨"""
@@ -230,8 +252,12 @@ class PanelHeader(tk.Frame):
 
     def _tick_clock(self):
         """시계 업데이트 (년도-날짜-시간)"""
-        self.clock_label.configure(text=now_local().strftime("%Y-%m-%d %H:%M:%S"))
-        self.after(500, self._tick_clock)
+        try:
+            if self.winfo_exists():
+                self.clock_label.configure(text=now_local().strftime("%Y-%m-%d %H:%M:%S"))
+                self._tick_clock_after_id = self.after(500, self._tick_clock)
+        except Exception:
+            pass
 
     def update_alert_count(self):
         """오늘 경고 카운트 버튼 텍스트 갱신 (주의/경계/심각)"""
@@ -604,3 +630,13 @@ class PanelHeader(tk.Frame):
                 self.update_comfort_indices(self._latest_temp, hum)
         except (ValueError, TypeError):
             pass
+
+    def destroy(self):
+        """위젯 삭제 시 after 콜백 취소"""
+        try:
+            if self._tick_clock_after_id:
+                self.after_cancel(self._tick_clock_after_id)
+                self._tick_clock_after_id = None
+        except Exception:
+            pass
+        super().destroy()

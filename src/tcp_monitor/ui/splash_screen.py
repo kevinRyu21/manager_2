@@ -78,7 +78,8 @@ class SplashScreen(tk.Toplevel):
                         ratio = min(400 / img.width, 120 / img.height)
                         new_size = (int(img.width * ratio), int(img.height * ratio))
                         img = img.resize(new_size, Image.LANCZOS)
-                        self.logo_imgref = ImageTk.PhotoImage(img)
+                        # master 지정하여 이미지 생성
+                        self.logo_imgref = ImageTk.PhotoImage(img, master=logo_label)
                         logo_label.configure(image=self.logo_imgref)
                         break
                     except Exception:
